@@ -1,896 +1,1501 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
+// import { useEffect, useMemo, useRef, useState } from "react";
+// import { FaArrowLeft, FaArrowRight } from "react-icons/fa";
 
-/**
- * HotelHero
- * Modern, responsive hero section with a themed date-range calendar and rotating backgrounds.
- *
- * Opening the calendar no longer changes page height (uses a fixed-position portal).
- *
- * Props:
- * - onSearch?: (params: { destination: string; checkIn: string; checkOut: string; guests: number }) => void
- * - defaultDestination?: string
- * - defaultGuests?: number
- * - backgroundUrl?: string
- * - backgroundUrls?: string[]
- * - rotateIntervalMs?: number
- * - themeColor?: string
- * - showTopBar?: boolean
- * - topOffset?: string | number
- */
-export default function HotelHero({
-  onSearch,
-  defaultDestination = "",
-  defaultGuests = 2,
-  backgroundUrl,
-  backgroundUrls,
-  rotateIntervalMs = 8000,
-  themeColor = "#F17232",
-  showTopBar = false,
-  topOffset = 0,
-}) {
-  const [destination, setDestination] = useState(defaultDestination);
-  const [checkIn, setCheckIn] = useState("");
-  const [checkOut, setCheckOut] = useState("");
-  const [guests, setGuests] = useState(defaultGuests);
-  const [bgIndex, setBgIndex] = useState(0);
+// export default function Hero({ onSearch, defaultDestination = "" }) {
+//   const API_URL = import.meta.env.VITE_API_URL;
 
-  // Today in yyyy-mm-dd (UTC)
-  const today = useMemo(() => formatDateUTC(new Date()), []);
+//   const [destination, setDestination] = useState(defaultDestination);
+//   const [suggestOpen, setSuggestOpen] = useState(false);
+//   const [options, setOptions] = useState([]);
+//   const [bgIndex, setBgIndex] = useState(0);
+//   const destWrapRef = useRef(null);
 
-  // Background images (fallback set)
-  const defaultBackgrounds = useMemo(
-    () => [
-      "https://images.unsplash.com/photo-1541562232579-512a21360020?q=80&w=2000&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1501117716987-c8e2a3f7f02d?q=80&w=2000&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1558770423-409a3cf4d29b?q=80&w=2000&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1528909514045-2fa4ac7a08ba?q=80&w=2000&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1515023115689-589c33041d3c?q=80&w=2000&auto=format&fit=crop",
-    ],
-    []
-  );
+//   // Fetch dynamic backgrounds
+//   const [apiBackgrounds, setApiBackgrounds] = useState([]);
+//   const defaultBackgrounds = useMemo(
+//     () => [
+//       "./hotels/h1.jpg",
+//       "./hotels/h2.jpg",
+//       "./hotels/h3.jpg",
+//       "./hotels/h4.jpg",
+//     ],
+//     []
+//   );
 
-  // Build rotation list
-  const rotationList = useMemo(() => {
-    if (backgroundUrls?.length) return backgroundUrls;
-    if (backgroundUrl) return [backgroundUrl, ...defaultBackgrounds.slice(1)];
-    return defaultBackgrounds;
-  }, [backgroundUrl, backgroundUrls, defaultBackgrounds]);
+//   useEffect(() => {
+//     fetch(`${API_URL}/api/hero/hotels`)
+//       .then((r) => r.json())
+//       .then((res) => {
+//         const imgs = res?.data?.images || [];
+//         if (imgs.length) setApiBackgrounds(imgs.map((p) => `${API_URL}${p}`));
+//       })
+//       .catch(() => {});
+//   }, [API_URL]);
 
-  // Auto-rotate background
+//   const rotationList = useMemo(() => {
+//     return apiBackgrounds.length ? apiBackgrounds : defaultBackgrounds;
+//   }, [apiBackgrounds, defaultBackgrounds]);
+
+//   // Auto-rotate backgrounds
+//   useEffect(() => {
+//     const id = setInterval(() => {
+//       setBgIndex((i) => (i + 1) % rotationList.length);
+//     }, 7000);
+//     return () => clearInterval(id);
+//   }, [rotationList]);
+
+//   // Navigation handlers
+//   const handlePrev = () => {
+//     setBgIndex((prev) => (prev === 0 ? rotationList.length - 1 : prev - 1));
+//   };
+//   const handleNext = () => {
+//     setBgIndex((prev) => (prev + 1) % rotationList.length);
+//   };
+
+//   // Fetch hotel/city suggestions
+//   useEffect(() => {
+//     if (!suggestOpen || options.length) return;
+//     let alive = true;
+//     fetch(`${API_URL}/api/hotels`)
+//       .then((r) => r.json())
+//       .then((rows) => {
+//         if (!alive) return;
+//         const set = new Set();
+//         for (const h of Array.isArray(rows) ? rows : []) {
+//           if (h.hotel_name) set.add(h.hotel_name);
+//           if (h.address) {
+//             const parts = h.address.split(",").map((p) => p.trim());
+//             if (parts.length) set.add(parts[parts.length - 1]);
+//           }
+//         }
+//         setOptions(Array.from(set));
+//       })
+//       .catch(() => {});
+//     return () => (alive = false);
+//   }, [suggestOpen, options.length, API_URL]);
+
+//   const filteredOptions = useMemo(() => {
+//     if (!destination) return options.slice(0, 8);
+//     return options
+//       .filter((o) => o.toLowerCase().includes(destination.toLowerCase()))
+//       .slice(0, 8);
+//   }, [options, destination]);
+
+//   const handleSubmit = (e) => {
+//     e.preventDefault();
+//     if (!destination) return;
+//     onSearch?.({ destination });
+//   };
+
+//   return (
+//     <>
+//       {/* Hero Section */}
+//       {/* <section className="relative h-[65vh] w-full overflow-hidden select-none flex items-center justify-center"> */}
+//       <section className="relative h-[20vh] sm:h-[50vh] md:h-[350px] w-full overflow-hidden select-none flex items-center justify-center">
+//         {/* Background Images */}
+//         {rotationList.map((src, idx) => (
+//           <img
+//             key={idx}
+//             src={src}
+//             alt="Hero Background"
+//             className={`absolute inset-0 w-full h-full object-fill transition-opacity duration-1000 ${
+//               idx === bgIndex ? "opacity-100" : "opacity-0"
+//             }`}
+//           />
+//         ))}
+//         <div className="absolute inset-0 bg-gradient-to-b from-black/50 to-black/30" />
+
+//         {/* Centered Search Input */}
+//         <div className="absolute inset-0 items-center justify-center z-10 px-4 hidden md:flex">
+//           <form onSubmit={handleSubmit} className="w-full max-w-md">
+//             <div ref={destWrapRef} className="relative">
+//               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+//                 <svg
+//                   xmlns="http://www.w3.org/2000/svg"
+//                   className="w-5 h-5"
+//                   fill="currentColor"
+//                   viewBox="0 0 24 24"
+//                 >
+//                   <path d="M12 2C8.686 2 6 4.686 6 8c0 4.418 6 12 6 12s6-7.582 6-12c0-3.314-2.686-6-6-6Zm0 8.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z" />
+//                 </svg>
+//               </span>
+//               <input
+//                 type="text"
+//                 placeholder="Search hotels or cities"
+//                 value={destination}
+//                 onChange={(e) => {
+//                   setDestination(e.target.value);
+//                   setSuggestOpen(true);
+//                 }}
+//                 onFocus={() => setSuggestOpen(true)}
+//                 className="w-full pl-10 pr-4 py-3 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white shadow-xl"
+//                 autoComplete="off"
+//               />
+//               {suggestOpen && filteredOptions.length > 0 && (
+//                 <ul className="absolute left-0 right-0 mt-1 max-h-60 overflow-auto bg-white border border-gray-200 rounded-xl shadow-lg z-50">
+//                   {filteredOptions.map((opt) => (
+//                     <li key={opt}>
+//                       <button
+//                         type="button"
+//                         onClick={() => {
+//                           setDestination(opt);
+//                           setSuggestOpen(false);
+//                         }}
+//                         className="w-full text-left px-3 py-2 hover:bg-gray-50"
+//                       >
+//                         {opt}
+//                       </button>
+//                     </li>
+//                   ))}
+//                 </ul>
+//               )}
+//             </div>
+//           </form>
+//         </div>
+
+//         {/* Right Bottom Arrows (Desktop Only) */}
+//         <div className="absolute bottom-6 right-6 gap-3 z-20 hidden md:flex">
+//           <button
+//             onClick={handlePrev}
+//             className="w-10 h-10 rounded-full bg-white/80 hover:bg-white shadow-lg flex items-center justify-center transition"
+//           >
+//             <FaArrowLeft className="text-gray-800" />
+//           </button>
+//           <button
+//             onClick={handleNext}
+//             className="w-10 h-10 rounded-full bg-white/80 hover:bg-white shadow-lg flex items-center justify-center transition"
+//           >
+//             <FaArrowRight className="text-gray-800" />
+//           </button>
+//         </div>
+//       </section>
+
+//       {/* Mobile Search Input (same position as main hero) */}
+//       <div className="md:hidden relative -top-8 z-20 px-4">
+//         <div className="bg-white rounded-full shadow-xl flex items-center px-4 py-4 w-full border border-gray-200">
+//           <svg
+//             xmlns="http://www.w3.org/2000/svg"
+//             fill="currentColor"
+//             viewBox="0 0 24 24"
+//             className="text-gray-500 mr-3 w-5 h-5"
+//           >
+//             <path d="M12 2C8.686 2 6 4.686 6 8c0 4.418 6 12 6 12s6-7.582 6-12c0-3.314-2.686-6-6-6Zm0 8.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5Z" />
+//           </svg>
+//           <input
+//             type="text"
+//             placeholder="Search hotels or cities"
+//             className="w-full outline-none text-gray-700 font-medium placeholder-gray-500 text-sm"
+//             value={destination}
+//             onChange={(e) => setDestination(e.target.value)}
+//             readOnly
+//           />
+//         </div>
+//       </div>
+//     </>
+//   );
+// }
+
+// import { useEffect, useRef, useState } from "react";
+// import {
+//   FaArrowLeft,
+//   FaArrowRight,
+//   FaClock,
+//   FaHotel,
+//   FaMapMarkerAlt,
+//   FaSearch,
+// } from "react-icons/fa";
+// import { useNavigate } from "react-router-dom";
+
+// export default function HotelHero() {
+//   const API_BASE = import.meta.env.VITE_API_URL || "";
+//   const fallbackSlides = [
+//     "./hotels/h1.jpg",
+//     "./hotels/h2.jpg",
+//     "./hotels/h3.jpg",
+//     "./hotels/h4.jpg",
+//   ];
+
+//   const [slides, setSlides] = useState(fallbackSlides);
+//   const [currentIndex, setCurrentIndex] = useState(0);
+
+//   // Search state
+//   const [query, setQuery] = useState("");
+//   const [hotels, setHotels] = useState([]);
+//   const [suggestions, setSuggestions] = useState([]);
+//   const [loading, setLoading] = useState(false);
+//   const [open, setOpen] = useState(false);
+//   const [highlighted, setHighlighted] = useState(-1);
+//   const [hoveredHeroImage, setHoveredHeroImage] = useState(null);
+//   const [searchHistory, setSearchHistory] = useState([]);
+
+//   const inputRef = useRef(null);
+//   const containerRef = useRef(null);
+//   const debounceRef = useRef(null);
+
+//   const navigate = useNavigate();
+
+//   // Load search history from localStorage
+//   useEffect(() => {
+//     const saved = localStorage.getItem("hotelSearchHistory");
+//     if (saved) {
+//       try {
+//         const history = JSON.parse(saved);
+//         setSearchHistory(history.slice(0, 5));
+//       } catch (e) {
+//         console.error("Failed to load search history:", e);
+//       }
+//     }
+//   }, []);
+
+//   // Save search history to localStorage
+//   const saveToSearchHistory = (searchTerm) => {
+//     if (!searchTerm.trim()) return;
+
+//     const updatedHistory = [
+//       searchTerm,
+//       ...searchHistory.filter(
+//         (item) => item.toLowerCase() !== searchTerm.toLowerCase()
+//       ),
+//     ].slice(0, 5);
+
+//     setSearchHistory(updatedHistory);
+//     localStorage.setItem("hotelSearchHistory", JSON.stringify(updatedHistory));
+//   };
+
+//   // Fetch hero slides
+//   useEffect(() => {
+//     let alive = true;
+//     fetch(`${API_BASE}/api/hero/hotels`)
+//       .then((res) => res.json())
+//       .then((data) => {
+//         const imgs = data?.data?.images || [];
+//         if (alive && imgs.length) setSlides(imgs.map((p) => `${API_BASE}${p}`));
+//       })
+//       .catch(() => {});
+//     return () => {
+//       alive = false;
+//     };
+//   }, [API_BASE]);
+
+//   // Fetch hotels from your database
+//   useEffect(() => {
+//     let alive = true;
+//     setLoading(true);
+
+//     fetch(`${API_BASE}/api/hotels`)
+//       .then((res) => {
+//         if (!res.ok) throw new Error("Failed to fetch hotels");
+//         return res.json();
+//       })
+//       .then((data) => {
+//         if (!alive) return;
+
+//         console.log("Raw hotels data:", data);
+
+//         // Handle different response formats
+//         const hotelsData = Array.isArray(data)
+//           ? data
+//           : data.data || data.rows || [];
+
+//         const normalizedHotels = hotelsData.map((hotel) => {
+//           let previewImage = "";
+
+//           // Parse images array from images field
+//           if (hotel.images) {
+//             try {
+//               const imagesArray =
+//                 typeof hotel.images === "string"
+//                   ? JSON.parse(hotel.images)
+//                   : hotel.images;
+
+//               if (Array.isArray(imagesArray) && imagesArray.length > 0) {
+//                 previewImage = imagesArray[0];
+//               }
+//             } catch (err) {
+//               // If JSON parsing fails, try comma-separated
+//               if (
+//                 typeof hotel.images === "string" &&
+//                 hotel.images.includes(",")
+//               ) {
+//                 const images = hotel.images
+//                   .split(",")
+//                   .map((img) => img.trim())
+//                   .filter((img) => img);
+//                 if (images.length > 0) previewImage = images[0];
+//               } else if (hotel.images) {
+//                 previewImage = hotel.images;
+//               }
+//             }
+//           }
+
+//           // Construct proper image URL
+//           if (
+//             previewImage &&
+//             !previewImage.startsWith("http") &&
+//             !previewImage.startsWith("data:")
+//           ) {
+//             previewImage = `${API_BASE}/uploads/hotels/${previewImage}`;
+//           }
+
+//           // Extract city from address for better search
+//           let city = "";
+//           if (hotel.address) {
+//             const addressParts = hotel.address
+//               .split(",")
+//               .map((part) => part.trim());
+//             if (addressParts.length > 1) {
+//               city =
+//                 addressParts[addressParts.length - 2] ||
+//                 addressParts[addressParts.length - 1];
+//             } else {
+//               city = hotel.address;
+//             }
+//           }
+
+//           return {
+//             id: hotel.id,
+//             hotel_name: hotel.hotel_name || "Unnamed Hotel",
+//             address: hotel.address || "",
+//             city: city,
+//             description: hotel.description || "",
+//             facilities: hotel.facilities || "",
+//             previewImage: previewImage,
+//             searchableText: `
+//               ${hotel.hotel_name || ""} 
+//               ${hotel.address || ""} 
+//               ${city}
+//               ${hotel.facilities || ""}
+//             `.toLowerCase(),
+//             ...hotel,
+//           };
+//         });
+
+//         console.log("Normalized hotels:", normalizedHotels);
+//         setHotels(normalizedHotels);
+//       })
+//       .catch((error) => {
+//         console.error("Failed to fetch hotels:", error);
+//         setHotels([]);
+//       })
+//       .finally(() => {
+//         if (alive) setLoading(false);
+//       });
+
+//     return () => {
+//       alive = false;
+//     };
+//   }, [API_BASE]);
+
+//   // Auto-slide
+//   useEffect(() => {
+//     const interval = setInterval(() => {
+//       setCurrentIndex((prev) => (prev + 1) % slides.length);
+//     }, 5000);
+//     return () => clearInterval(interval);
+//   }, [slides.length]);
+
+//   // Search functionality
+//   useEffect(() => {
+//     clearTimeout(debounceRef.current);
+
+//     debounceRef.current = setTimeout(() => {
+//       if (!query.trim()) {
+//         setSuggestions([]);
+//         return;
+//       }
+
+//       const searchTerm = query.toLowerCase().trim();
+
+//       const matches = hotels.filter((hotel) => {
+//         return hotel.searchableText.includes(searchTerm);
+//       });
+
+//       console.log("Search matches:", matches);
+//       setSuggestions(matches.slice(0, 8));
+//     }, 200);
+
+//     return () => clearTimeout(debounceRef.current);
+//   }, [query, hotels]);
+
+//   // Update hovered image
+//   useEffect(() => {
+//     if (highlighted >= 0 && suggestions[highlighted]) {
+//       setHoveredHeroImage(suggestions[highlighted].previewImage || null);
+//     } else {
+//       setHoveredHeroImage(null);
+//     }
+//   }, [highlighted, suggestions]);
+
+//   // Close dropdown on outside click
+//   useEffect(() => {
+//     function handleClick(e) {
+//       if (containerRef.current && !containerRef.current.contains(e.target)) {
+//         setOpen(false);
+//         setHighlighted(-1);
+//       }
+//     }
+
+//     const timer = setTimeout(() => {
+//       document.addEventListener("click", handleClick);
+//     }, 100);
+
+//     return () => {
+//       clearTimeout(timer);
+//       document.removeEventListener("click", handleClick);
+//     };
+//   }, []);
+
+//   const handlePrev = () =>
+//     setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+
+//   const handleNext = () =>
+//     setCurrentIndex((prev) => (prev + 1) % slides.length);
+
+//   // Navigate to hotel detail page
+//   const pickSuggestion = (hotel) => {
+//     console.log("Selected hotel:", hotel);
+//     const searchText = hotel.hotel_name || "";
+//     setQuery(searchText);
+//     setOpen(false);
+//     setSuggestions([]);
+//     setHighlighted(-1);
+//     saveToSearchHistory(searchText);
+
+//     if (hotel.id) {
+//       navigate(`/hotels/${hotel.id}`);
+//     }
+//   };
+
+//   const handleSearchSubmit = (e) => {
+//     e.preventDefault();
+//     if (query.trim()) {
+//       saveToSearchHistory(query.trim());
+//       navigate(`/hotels?search=${encodeURIComponent(query)}`);
+//     }
+//   };
+
+//   const clearSearchHistory = () => {
+//     setSearchHistory([]);
+//     localStorage.removeItem("hotelSearchHistory");
+//   };
+
+//   const onKeyDown = (e) => {
+//     if (!open) return;
+
+//     switch (e.key) {
+//       case "ArrowDown":
+//         e.preventDefault();
+//         setHighlighted((prev) =>
+//           prev < suggestions.length - 1 ? prev + 1 : 0
+//         );
+//         break;
+//       case "ArrowUp":
+//         e.preventDefault();
+//         setHighlighted((prev) =>
+//           prev > 0 ? prev - 1 : suggestions.length - 1
+//         );
+//         break;
+//       case "Enter":
+//         e.preventDefault();
+//         if (highlighted >= 0 && suggestions[highlighted]) {
+//           pickSuggestion(suggestions[highlighted]);
+//         } else if (query.trim()) {
+//           handleSearchSubmit(e);
+//         }
+//         break;
+//       case "Escape":
+//         setOpen(false);
+//         setHighlighted(-1);
+//         break;
+//       default:
+//         break;
+//     }
+//   };
+
+//   // Handle input focus
+//   const handleInputFocus = () => {
+//     setOpen(true);
+//   };
+
+//   // Handle input change
+//   const handleInputChange = (e) => {
+//     setQuery(e.target.value);
+//     setOpen(true);
+//   };
+
+//   // Simple text highlighter
+//   const HighlightText = ({ text, highlight }) => {
+//     if (!text || !highlight) return text;
+
+//     try {
+//       const parts = text.split(new RegExp(`(${highlight})`, "gi"));
+//       return (
+//         <span>
+//           {parts.map((part, i) =>
+//             part.toLowerCase() === highlight.toLowerCase() ? (
+//               <mark key={i} className="bg-yellow-200 px-1 rounded">
+//                 {part}
+//               </mark>
+//             ) : (
+//               part
+//             )
+//           )}
+//         </span>
+//       );
+//     } catch (error) {
+//       return text;
+//     }
+//   };
+
+//   return (
+//     <>
+//       {/* Hero Section */}
+//       <div className="relative h-[20vh] md:h-[500px] lg:h-[350px] overflow-visible select-none">
+//         {/* Background slides */}
+//         <div className="absolute inset-0 transition-all duration-1000">
+//           {slides.map((img, i) => (
+//             <img
+//               key={i}
+//               src={img}
+//               alt={`hotel-slide-${i}`}
+//               className={`absolute w-full h-full object-fill transition-opacity duration-1000 ${
+//                 i === currentIndex ? "opacity-100" : "opacity-0"
+//               }`}
+//               draggable={false}
+//             />
+//           ))}
+//           <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/30 pointer-events-none"></div>
+//         </div>
+
+//         {/* Desktop Search */}
+//         <div className="absolute top-1/3 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 px-4 hidden md:flex w-full max-w-4xl">
+//           <div
+//             ref={containerRef}
+//             className="w-full max-w-[600px]  mx-auto top-16 relative"
+//           >
+//             <form onSubmit={handleSearchSubmit} className="relative">
+//               <div className="bg-white rounded-2xl shadow-2xl flex items-center px-6 py-4 w-full backdrop-blur-sm border border-gray-100">
+//                 <FaSearch className="text-gray-400 mr-3 w-5 h-5 flex-shrink-0" />
+//                 <input
+//                   ref={inputRef}
+//                   type="text"
+//                   placeholder="Search hotels, cities, or locations..."
+//                   className="w-full outline-none text-gray-700 font-medium bg-transparent placeholder-gray-400 text-lg"
+//                   value={query}
+//                   onChange={handleInputChange}
+//                   onFocus={handleInputFocus}
+//                   onKeyDown={onKeyDown}
+//                 />
+//                 {query && (
+//                   <button
+//                     type="button"
+//                     onClick={() => setQuery("")}
+//                     className="ml-2 text-gray-400 hover:text-gray-600 transition-colors"
+//                   >
+//                     ✕
+//                   </button>
+//                 )}
+//               </div>
+//             </form>
+
+//             {/* Search Results Dropdown */}
+//             {open && (
+//               <div className="absolute mt-4 w-full bg-white rounded-2xl shadow-2xl max-h-96 overflow-hidden z-50 border border-gray-200">
+//                 {/* Preview image */}
+//                 {hoveredHeroImage && (
+//                   <div className="absolute -top-52 left-1/2 transform -translate-x-1/2 w-80 h-48 rounded-xl overflow-hidden shadow-2xl z-50 border-2 border-white">
+//                     <img
+//                       src={hoveredHeroImage}
+//                       alt="hotel preview"
+//                       className="w-full h-full object-cover"
+//                       onError={(e) => {
+//                         e.target.style.display = "none";
+//                       }}
+//                     />
+//                   </div>
+//                 )}
+
+//                 {/* Loading State */}
+//                 {loading && query && (
+//                   <div className="p-6 text-center text-gray-500">
+//                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-2"></div>
+//                     Searching hotels...
+//                   </div>
+//                 )}
+
+//                 {/* Search Results */}
+//                 {!loading && suggestions.length > 0 && (
+//                   <>
+//                     <div className="p-4 border-b border-gray-100 bg-gray-50">
+//                       <div className="text-sm font-semibold text-gray-700">
+//                         Hotels ({suggestions.length})
+//                       </div>
+//                     </div>
+//                     <div className="max-h-80 overflow-y-auto">
+//                       {suggestions.map((hotel, index) => (
+//                         <div
+//                           key={hotel.id || index}
+//                           className={`flex items-center gap-4 p-4 cursor-pointer transition-all duration-200 border-b border-gray-100 last:border-b-0 ${
+//                             highlighted === index
+//                               ? "bg-blue-50 border-l-4 border-l-blue-500"
+//                               : "hover:bg-gray-50"
+//                           }`}
+//                           onMouseEnter={() => setHighlighted(index)}
+//                           onClick={() => pickSuggestion(hotel)}
+//                         >
+//                           <div className="w-16 h-16 bg-gray-100 rounded-xl overflow-hidden flex-shrink-0">
+//                             {hotel.previewImage ? (
+//                               <img
+//                                 src={hotel.previewImage}
+//                                 alt={hotel.hotel_name}
+//                                 className="w-full h-full object-cover"
+//                                 onError={(e) => {
+//                                   e.target.style.display = "none";
+//                                   e.target.nextSibling.style.display = "flex";
+//                                 }}
+//                               />
+//                             ) : null}
+//                             <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center hidden">
+//                               <FaHotel className="text-gray-400" />
+//                             </div>
+//                           </div>
+//                           <div className="flex-1 min-w-0">
+//                             <div className="text-base font-semibold text-gray-900 mb-1">
+//                               <HighlightText
+//                                 text={hotel.hotel_name}
+//                                 highlight={query}
+//                               />
+//                             </div>
+//                             <div className="flex items-center gap-3 text-sm text-gray-600 mb-1">
+//                               {hotel.city && (
+//                                 <span className="flex items-center gap-1">
+//                                   <FaMapMarkerAlt className="w-3 h-3" />
+//                                   <HighlightText
+//                                     text={hotel.city}
+//                                     highlight={query}
+//                                   />
+//                                 </span>
+//                               )}
+//                               {hotel.facilities && (
+//                                 <span className="flex items-center gap-1">
+//                                   <FaHotel className="w-3 h-3" />
+//                                   <span className="truncate">
+//                                     {hotel.facilities
+//                                       .split(",")
+//                                       .slice(0, 2)
+//                                       .join(", ")}
+//                                   </span>
+//                                 </span>
+//                               )}
+//                             </div>
+//                             {hotel.description && (
+//                               <div className="text-sm text-gray-500 line-clamp-1">
+//                                 {hotel.description}
+//                               </div>
+//                             )}
+//                           </div>
+//                         </div>
+//                       ))}
+//                     </div>
+//                   </>
+//                 )}
+
+//                 {/* No Results */}
+//                 {!loading && query && suggestions.length === 0 && (
+//                   <div className="p-8 text-center">
+//                     <FaSearch className="mx-auto text-gray-300 text-3xl mb-3" />
+//                     <div className="text-gray-500 font-medium mb-2">
+//                       No hotels found
+//                     </div>
+//                     <div className="text-sm text-gray-400">
+//                       Try different keywords or locations
+//                     </div>
+//                   </div>
+//                 )}
+
+//                 {/* Recent Searches */}
+//                 {!loading && !query && searchHistory.length > 0 && (
+//                   <>
+//                     <div className="p-4 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+//                       <div className="text-sm font-semibold text-gray-700">
+//                         Recent Searches
+//                       </div>
+//                       <button
+//                         onClick={clearSearchHistory}
+//                         className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+//                       >
+//                         Clear all
+//                       </button>
+//                     </div>
+//                     <div className="p-2">
+//                       {searchHistory.map((search, index) => (
+//                         <button
+//                           key={index}
+//                           onClick={() => setQuery(search)}
+//                           className="w-full text-left p-3 rounded-lg hover:bg-gray-50 transition-colors flex items-center gap-3 text-gray-700"
+//                         >
+//                           <FaClock className="text-gray-400 w-4 h-4" />
+//                           {search}
+//                         </button>
+//                       ))}
+//                     </div>
+//                   </>
+//                 )}
+
+//                 {/* Empty State */}
+//                 {!loading && !query && searchHistory.length === 0 && (
+//                   <div className="p-6 text-center text-gray-500">
+//                     <div className="text-sm">Start typing to search hotels</div>
+//                   </div>
+//                 )}
+//               </div>
+//             )}
+//           </div>
+//         </div>
+
+//         {/* Navigation Arrows */}
+//         <div className="absolute bottom-8 right-8 gap-3 z-20 hidden md:flex">
+//           <button
+//             onClick={handlePrev}
+//             className="w-12 h-12 rounded-full bg-white/90 hover:bg-white shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
+//           >
+//             <FaArrowLeft className="text-gray-800" />
+//           </button>
+//           <button
+//             onClick={handleNext}
+//             className="w-12 h-12 rounded-full bg-white/90 hover:bg-white shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
+//           >
+//             <FaArrowRight className="text-gray-800" />
+//           </button>
+//         </div>
+//       </div>
+
+//       {/* Mobile Search */}
+//       <div className="md:hidden relative -top-12 z-30 px-4">
+//         <div ref={containerRef} className="relative">
+//           <form onSubmit={handleSearchSubmit}>
+//             <div className="bg-white rounded-2xl shadow-xl flex items-center px-4 py-4 w-full border border-gray-200">
+//               <FaSearch className="text-gray-400 mr-3 w-5 h-5 flex-shrink-0" />
+//               <input
+//                 type="text"
+//                 placeholder="Search hotels..."
+//                 className="w-full outline-none text-gray-700 font-medium placeholder-gray-500 text-base"
+//                 value={query}
+//                 onChange={handleInputChange}
+//                 onFocus={handleInputFocus}
+//               />
+//             </div>
+//           </form>
+
+//           {/* Mobile Suggestions */}
+//           {open && (suggestions.length > 0 || searchHistory.length > 0) && (
+//             <div className="absolute mt-3 w-full bg-white rounded-2xl shadow-2xl max-h-80 overflow-auto z-50 border border-gray-200">
+//               {suggestions.length > 0
+//                 ? suggestions.map((hotel, index) => (
+//                     <div
+//                       key={hotel.id || index}
+//                       onClick={() => pickSuggestion(hotel)}
+//                       className="flex items-center gap-3 p-4 border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+//                     >
+//                       <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+//                         {hotel.previewImage ? (
+//                           <img
+//                             src={hotel.previewImage}
+//                             alt={hotel.hotel_name}
+//                             className="w-full h-full object-cover"
+//                           />
+//                         ) : (
+//                           <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+//                             <FaHotel className="text-gray-400" />
+//                           </div>
+//                         )}
+//                       </div>
+//                       <div className="flex-1 min-w-0">
+//                         <div className="text-sm font-semibold text-gray-800 truncate">
+//                           {hotel.hotel_name}
+//                         </div>
+//                         <div className="text-xs text-gray-500 truncate">
+//                           {hotel.city}
+//                         </div>
+//                         {hotel.facilities && (
+//                           <div className="text-xs text-gray-400 mt-1 truncate">
+//                             {hotel.facilities.split(",").slice(0, 2).join(", ")}
+//                           </div>
+//                         )}
+//                       </div>
+//                     </div>
+//                   ))
+//                 : searchHistory.map((search, index) => (
+//                     <button
+//                       key={index}
+//                       onClick={() => setQuery(search)}
+//                       className="w-full text-left p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 flex items-center gap-2 text-sm text-gray-700"
+//                     >
+//                       <FaClock className="text-gray-400 w-3 h-3" />
+//                       {search}
+//                     </button>
+//                   ))}
+//             </div>
+//           )}
+//         </div>
+//       </div>
+//     </>
+//   );
+// }
+
+
+import { useEffect, useRef, useState } from "react";
+import {
+    FaArrowLeft,
+    FaArrowRight,
+    FaClock,
+    FaHotel,
+    FaMapMarkerAlt,
+    FaSearch,
+    FaTag,
+} from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+
+export default function HotelHero() {
+  const API_BASE = import.meta.env.VITE_API_URL || "";
+  const fallbackSlides = [
+    "./hotels/h1.jpg",
+    "./hotels/h2.jpg",
+    "./hotels/h3.jpg",
+    "./hotels/h4.jpg",
+  ];
+
+  const [slides, setSlides] = useState(fallbackSlides);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Search state
+  const [query, setQuery] = useState("");
+  const [hotels, setHotels] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [highlighted, setHighlighted] = useState(-1);
+  const [hoveredHeroImage, setHoveredHeroImage] = useState(null);
+  const [searchHistory, setSearchHistory] = useState([]);
+
+  const inputRef = useRef(null);
+  const containerRef = useRef(null);
+  const debounceRef = useRef(null);
+
+  const navigate = useNavigate();
+
+  // Load search history from localStorage
   useEffect(() => {
-    if (!rotationList?.length) return;
-    const id = setInterval(() => {
-      setBgIndex((i) => (i + 1) % rotationList.length);
-    }, rotateIntervalMs);
-    return () => clearInterval(id);
-  }, [rotationList, rotateIntervalMs]);
+    const saved = localStorage.getItem("hotelSearchHistory");
+    if (saved) {
+      try {
+        const history = JSON.parse(saved);
+        setSearchHistory(history.slice(0, 5));
+      } catch (e) {
+        console.error("Failed to load search history:", e);
+      }
+    }
+  }, []);
 
-  // Date-range picker visibility + anchor element for portal positioning
-  const [rangeOpen, setRangeOpen] = useState(false);
-  const [calendarAnchorEl, setCalendarAnchorEl] = useState(null);
-  const anchorRect = useAnchorRect(calendarAnchorEl, rangeOpen);
+  // Save search history to localStorage
+  const saveToSearchHistory = (searchTerm) => {
+    if (!searchTerm.trim()) return;
 
-  const minCheckout = useMemo(() => {
-    if (!checkIn) return today;
-    const d = addDays(parseDateUTC(checkIn), 1);
-    return formatDateUTC(d);
-  }, [checkIn, today]);
+    const updatedHistory = [
+      searchTerm,
+      ...searchHistory.filter(
+        (item) => item.toLowerCase() !== searchTerm.toLowerCase()
+      ),
+    ].slice(0, 5);
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!destination || !checkIn || !checkOut || !guests) return;
-    const payload = {
-      destination,
-      checkIn,
-      checkOut,
-      guests: Number(guests) || 1,
+    setSearchHistory(updatedHistory);
+    localStorage.setItem("hotelSearchHistory", JSON.stringify(updatedHistory));
+  };
+
+  // Fetch hero slides
+  useEffect(() => {
+    let alive = true;
+    fetch(`${API_BASE}/api/hero/hotels`)
+      .then((res) => res.json())
+      .then((data) => {
+        const imgs = data?.data?.images || [];
+        if (alive && imgs.length) setSlides(imgs.map((p) => `${API_BASE}${p}`));
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
     };
-    if (onSearch) onSearch(payload);
-    else {
-      console.log("Hotel search:", payload);
-      alert(
-        `Searching hotels in ${destination} from ${checkIn} to ${checkOut} for ${guests} guest(s)...`
-      );
+  }, [API_BASE]);
+
+  // Fetch hotels from your database
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+
+    fetch(`${API_BASE}/api/hotels`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Failed to fetch hotels");
+        return res.json();
+      })
+      .then((data) => {
+        if (!alive) return;
+
+        console.log("Raw hotels data:", data);
+
+        // Handle different response formats
+        const hotelsData = Array.isArray(data)
+          ? data
+          : data.data || data.rows || [];
+
+        const normalizedHotels = hotelsData.map((hotel) => {
+          let previewImage = "";
+
+          // Parse images array from images field
+          if (hotel.images) {
+            try {
+              const imagesArray =
+                typeof hotel.images === "string"
+                  ? JSON.parse(hotel.images)
+                  : hotel.images;
+
+              if (Array.isArray(imagesArray) && imagesArray.length > 0) {
+                previewImage = imagesArray[0];
+              }
+            } catch (err) {
+              // If JSON parsing fails, try comma-separated
+              if (
+                typeof hotel.images === "string" &&
+                hotel.images.includes(",")
+              ) {
+                const images = hotel.images
+                  .split(",")
+                  .map((img) => img.trim())
+                  .filter((img) => img);
+                if (images.length > 0) previewImage = images[0];
+              } else if (hotel.images) {
+                previewImage = hotel.images;
+              }
+            }
+          }
+
+          // Construct proper image URL
+          if (
+            previewImage &&
+            !previewImage.startsWith("http") &&
+            !previewImage.startsWith("data:")
+          ) {
+            previewImage = `${API_BASE}/uploads/hotels/${previewImage}`;
+          }
+
+          // Extract city from address for better search
+          let city = "";
+          if (hotel.address) {
+            const addressParts = hotel.address
+              .split(",")
+              .map((part) => part.trim());
+            if (addressParts.length > 1) {
+              city =
+                addressParts[addressParts.length - 2] ||
+                addressParts[addressParts.length - 1];
+            } else {
+              city = hotel.address;
+            }
+          }
+
+          return {
+            id: hotel.id,
+            hotel_name: hotel.hotel_name || "Unnamed Hotel",
+            address: hotel.address || "",
+            city: city,
+            description: hotel.description || "",
+            facilities: hotel.facilities || "",
+            previewImage: previewImage,
+            searchableText: `
+              ${hotel.hotel_name || ""} 
+              ${hotel.address || ""} 
+              ${city}
+              ${hotel.facilities || ""}
+            `.toLowerCase(),
+            ...hotel,
+          };
+        });
+
+        console.log("Normalized hotels:", normalizedHotels);
+        setHotels(normalizedHotels);
+      })
+      .catch((error) => {
+        console.error("Failed to fetch hotels:", error);
+        setHotels([]);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+
+    return () => {
+      alive = false;
+    };
+  }, [API_BASE]);
+
+  // Auto-slide
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentIndex((prev) => (prev + 1) % slides.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [slides.length]);
+
+  // Search functionality
+  useEffect(() => {
+    clearTimeout(debounceRef.current);
+
+    debounceRef.current = setTimeout(() => {
+      if (!query.trim()) {
+        setSuggestions([]);
+        return;
+      }
+
+      const searchTerm = query.toLowerCase().trim();
+
+      const matches = hotels.filter((hotel) => {
+        return hotel.searchableText.includes(searchTerm);
+      });
+
+      console.log("Search matches:", matches);
+      setSuggestions(matches.slice(0, 8));
+    }, 200);
+
+    return () => clearTimeout(debounceRef.current);
+  }, [query, hotels]);
+
+  // Update hovered image
+  useEffect(() => {
+    if (highlighted >= 0 && suggestions[highlighted]) {
+      setHoveredHeroImage(suggestions[highlighted].previewImage || null);
+    } else {
+      setHoveredHeroImage(null);
+    }
+  }, [highlighted, suggestions]);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClick(e) {
+      if (containerRef.current && !containerRef.current.contains(e.target)) {
+        setOpen(false);
+        setHighlighted(-1);
+      }
+    }
+
+    const timer = setTimeout(() => {
+      document.addEventListener("click", handleClick);
+    }, 100);
+
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("click", handleClick);
+    };
+  }, []);
+
+  const handlePrev = () =>
+    setCurrentIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+
+  const handleNext = () =>
+    setCurrentIndex((prev) => (prev + 1) % slides.length);
+
+  // Navigate to hotel detail page
+  const pickSuggestion = (hotel) => {
+    console.log("Selected hotel:", hotel);
+    const searchText = hotel.hotel_name || "";
+    setQuery(searchText);
+    setOpen(false);
+    setSuggestions([]);
+    setHighlighted(-1);
+    saveToSearchHistory(searchText);
+
+    if (hotel.id) {
+      navigate(`/hotels/${hotel.id}`);
     }
   };
 
-  // Theme variables
-  const colorVars = {
-    "--primary": themeColor,
-    "--primary-600": shade(themeColor, -8),
-    "--primary-700": shade(themeColor, -14),
-    "--primary-800": shade(themeColor, -20),
-    "--hero-top-offset":
-      typeof topOffset === "number" ? `${topOffset}px` : topOffset || "0px",
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    if (query.trim()) {
+      saveToSearchHistory(query.trim());
+      navigate(`/hotels?search=${encodeURIComponent(query)}`);
+    }
   };
 
-  const openCalendar = (e) => {
-    setCalendarAnchorEl(e.currentTarget);
-    setRangeOpen(true);
+  const clearSearchHistory = () => {
+    setSearchHistory([]);
+    localStorage.removeItem("hotelSearchHistory");
+  };
+
+  const onKeyDown = (e) => {
+    if (!open) return;
+
+    switch (e.key) {
+      case "ArrowDown":
+        e.preventDefault();
+        setHighlighted((prev) =>
+          prev < suggestions.length - 1 ? prev + 1 : 0
+        );
+        break;
+      case "ArrowUp":
+        e.preventDefault();
+        setHighlighted((prev) =>
+          prev > 0 ? prev - 1 : suggestions.length - 1
+        );
+        break;
+      case "Enter":
+        e.preventDefault();
+        if (highlighted >= 0 && suggestions[highlighted]) {
+          pickSuggestion(suggestions[highlighted]);
+        } else if (query.trim()) {
+          handleSearchSubmit(e);
+        }
+        break;
+      case "Escape":
+        setOpen(false);
+        setHighlighted(-1);
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Handle input focus
+  const handleInputFocus = () => {
+    setOpen(true);
+  };
+
+  // Handle input change
+  const handleInputChange = (e) => {
+    setQuery(e.target.value);
+    setOpen(true);
+  };
+
+  // Simple text highlighter
+  const HighlightText = ({ text, highlight }) => {
+    if (!text || !highlight) return text;
+
+    try {
+      const parts = text.split(new RegExp(`(${highlight})`, "gi"));
+      return (
+        <span>
+          {parts.map((part, i) =>
+            part.toLowerCase() === highlight.toLowerCase() ? (
+              <mark key={i} className="bg-yellow-200 px-1 rounded">
+                {part}
+              </mark>
+            ) : (
+              part
+            )
+          )}
+        </span>
+      );
+    } catch (error) {
+      return text;
+    }
   };
 
   return (
-    <section
-      className="relative isolate pt-[var(--hero-top-offset)]"
-      style={colorVars}
-    >
-      {/* Rotating Background */}
-      <div className="absolute inset-0 -z-10 overflow-hidden">
-        <div className="absolute inset-0">
-          {rotationList.map((src, idx) => (
+    <>
+      {/* Hero Section */}
+      <div className="relative h-[20vh] md:h-[500px] lg:h-[350px] overflow-visible select-none">
+        {/* Background slides */}
+        <div className="absolute inset-0 transition-all duration-1000">
+          {slides.map((img, i) => (
             <img
-              key={idx}
-              src={src}
-              alt="Hotel ambience"
-              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ${
-                idx === bgIndex ? "opacity-100" : "opacity-0"
+              key={i}
+              src={img}
+              alt={`hotel-slide-${i}`}
+              className={`absolute w-full h-full object-fill transition-opacity duration-1000 ${
+                i === currentIndex ? "opacity-100" : "opacity-0"
               }`}
-              loading={idx === 0 ? "eager" : "lazy"}
-              fetchPriority={idx === 0 ? "high" : undefined}
+              draggable={false}
             />
           ))}
+          <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-black/30 pointer-events-none"></div>
         </div>
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/45 to-black/35" />
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,0,0,0.22),transparent_60%)]" />
-      </div>
 
-      {/* Optional hero top bar (disabled by default so it won't conflict with your white navbar) */}
-      {showTopBar && (
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
-          <div className="flex items-center justify-between gap-4">
-            <a
-              href="#"
-              aria-label="Hotel Home"
-              className="inline-flex items-center gap-2 text-white"
-            >
-              <span className="inline-grid place-items-center h-9 w-9 rounded-lg bg-white/15 ring-1 ring-white/20 backdrop-blur">
-                <BedIcon className="h-5 w-5 text-white" />
-              </span>
-              <span className="text-lg font-semibold tracking-wide">
-                StayFinder
-              </span>
-            </a>
-
-            <div className="hidden md:flex items-center gap-6 text-white/90 text-sm">
-              <span className="inline-flex items-center gap-2">
-                <ShieldIcon className="h-4 w-4" />
-                Best price guarantee
-              </span>
-              <span className="inline-flex items-center gap-2">
-                <HeadsetIcon className="h-4 w-4" />
-                24/7 support
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Hero content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-10 pt-10 sm:pt-16 lg:pt-24">
-        <div className="grid lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-          {/* Text column */}
-          <div className="lg:col-span-6 text-white">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white/10 ring-1 ring-white/20 px-3 py-1 text-xs sm:text-sm mb-5 backdrop-blur">
-              <SparkleIcon className="h-4 w-4" />
-              Handpicked stays for every mood
-            </div>
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-semibold leading-tight tracking-tight">
-              Find your perfect stay, from cozy to grand
-            </h1>
-            <p className="mt-4 text-white/85 text-base sm:text-lg max-w-2xl">
-              Compare top deals across thousands of hotels and resorts. Feel
-              good about every booking with flexible options and trusted
-              reviews.
-            </p>
-
-            {/* Popular tags */}
-            <div className="mt-5 flex flex-wrap gap-2">
-              {[
-                "Dubai",
-                "Abu Dhabi",
-                "Ras Al Khaimah",
-                "Sharjah",
-                "Fujairah",
-              ].map((city) => (
-                <button
-                  key={city}
-                  onClick={() => setDestination(city)}
-                  className="rounded-full bg-white/12 hover:bg-white/20 px-3 py-1 text-sm ring-1 ring-white/20 transition"
-                >
-                  {city}
-                </button>
-              ))}
-            </div>
-
-            {/* Trust stats */}
-            <div className="mt-6 grid grid-cols-3 gap-4 max-w-md">
-              <Stat label="Happy travelers" value="2M+" />
-              <Stat label="Properties" value="300k+" />
-              <Stat label="Cities" value="1200+" />
-            </div>
-          </div>
-
-          {/* Search card column */}
-          <div className="lg:col-span-6">
-            <div className="rounded-2xl bg-white/95 shadow-2xl ring-1 ring-black/5 backdrop-blur-md p-4 sm:p-5">
-              <form onSubmit={handleSubmit} className="space-y-3">
-                {/* Row 1: Destination */}
-                <div className="grid grid-cols-1 gap-3">
-                  <LabeledField label="Destination" htmlFor="destination">
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
-                        <PinIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        id="destination"
-                        name="destination"
-                        type="text"
-                        placeholder="Where to?"
-                        value={destination}
-                        onChange={(e) => setDestination(e.target.value)}
-                        className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/60 focus:border-[var(--primary)]/60 transition placeholder:text-gray-400"
-                        autoComplete="off"
-                        required
-                      />
-                    </div>
-                  </LabeledField>
-                </div>
-
-                {/* Row 2: Date range (popover via portal; does not change layout) */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <LabeledField label="Check-in" htmlFor="checkin">
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
-                        <CalendarIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <button
-                        type="button"
-                        id="checkin"
-                        onClick={openCalendar}
-                        className="w-full text-left pl-10 pr-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/60 focus:border-[var(--primary)]/60 transition"
-                      >
-                        {checkIn || "Select date"}
-                      </button>
-                      <input
-                        type="hidden"
-                        name="checkin"
-                        value={checkIn}
-                        required
-                      />
-                    </div>
-                  </LabeledField>
-
-                  <LabeledField label="Check-out" htmlFor="checkout">
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
-                        <CalendarIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <button
-                        type="button"
-                        id="checkout"
-                        onClick={openCalendar}
-                        className="w-full text-left pl-10 pr-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/60 focus:border-[var(--primary)]/60 transition"
-                      >
-                        {checkOut || "Select date"}
-                      </button>
-                      <input
-                        type="hidden"
-                        name="checkout"
-                        value={checkOut}
-                        required
-                      />
-                    </div>
-                  </LabeledField>
-                </div>
-
-                {/* Date range popover (portal + fixed position) */}
-                <DateRangePopover
-                  open={rangeOpen}
-                  onClose={() => setRangeOpen(false)}
-                  startDate={checkIn}
-                  endDate={checkOut}
-                  minDate={today}
-                  onChange={({ start, end }) => {
-                    setCheckIn(start || "");
-                    setCheckOut(end || "");
-                  }}
-                  themeColorVar="var(--primary)"
-                  anchorRect={anchorRect}
+        {/* Desktop Search - Same compact design as CruisesHero */}
+        <div className="absolute top-[65%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 px-4 hidden md:flex w-full max-w-4xl">
+          <div
+            ref={containerRef}
+            className="w-full max-w-[450px] mx-auto relative"
+          >
+            <form onSubmit={handleSearchSubmit} className="relative">
+              <div className="bg-white rounded-lg shadow-md flex items-center px-3 py-2 w-full border border-gray-200">
+                <FaMapMarkerAlt className="text-gray-400 mr-2 w-4 h-4 flex-shrink-0" />
+                <input
+                  ref={inputRef}
+                  type="text"
+                  placeholder="Search hotels..."
+                  className="w-full outline-none text-gray-700 font-medium bg-transparent placeholder-gray-400 text-sm"
+                  value={query}
+                  onChange={handleInputChange}
+                  onFocus={handleInputFocus}
+                  onKeyDown={onKeyDown}
                 />
-
-                {/* Row 3: Guests + CTA */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <LabeledField label="Guests" htmlFor="guests">
-                    <div className="relative">
-                      <div className="pointer-events-none absolute inset-y-0 left-0 pl-3 flex items-center">
-                        <UsersIcon className="h-5 w-5 text-gray-400" />
-                      </div>
-                      <input
-                        id="guests"
-                        name="guests"
-                        type="number"
-                        min={1}
-                        value={guests}
-                        onChange={(e) => setGuests(e.target.value)}
-                        className="w-full pl-10 pr-3 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/60 focus:border-[var(--primary)]/60 transition"
-                        required
-                      />
-                    </div>
-                  </LabeledField>
-
-                  {/* CTA */}
-                  <div className="flex sm:items-end">
-                    <button
-                      type="submit"
-                      className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] text-white font-medium px-4 py-3.5 shadow-lg shadow-[var(--primary)]/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-[var(--primary)] transition"
-                    >
-                      <SearchIcon className="h-5 w-5" />
-                      Search Hotels
-                    </button>
-                  </div>
-                </div>
-
-                {/* Helper row */}
-                <div className="flex items-center justify-between pt-2 text-sm text-gray-600">
-                  <div className="inline-flex items-center gap-2">
-                    <CheckIcon className="h-4 w-4 text-[var(--primary)]" />
-                    Free cancellation on most stays
-                  </div>
+                {query && (
                   <button
                     type="button"
-                    onClick={() => setDestination("Near me")}
-                    className="inline-flex items-center gap-2 text-[var(--primary)] hover:text-[var(--primary-800)]"
+                    onClick={() => setQuery("")}
+                    className="ml-1 text-gray-400 hover:text-gray-600 transition-colors text-xs"
                   >
-                    <TargetIcon className="h-4 w-4" />
-                    Use my location
+                    ✕
                   </button>
-                </div>
-              </form>
-            </div>
+                )}
+              </div>
+            </form>
 
-            {/* Badge strip */}
-            <div className="mt-4 grid grid-cols-2 sm:grid-cols-3 gap-3 text-white/90 text-sm">
-              <Badge
-                icon={<StarIcon className="h-4 w-4" />}
-                text="Trusted reviews"
-              />
-              <Badge
-                icon={<SparkleIcon className="h-4 w-4" />}
-                text="Exclusive deals"
-              />
-              <Badge
-                icon={<ShieldIcon className="h-4 w-4" />}
-                text="Secure booking"
-              />
-            </div>
+            {/* Desktop Search Results Dropdown */}
+            {open && (
+              <div className="absolute mt-2 w-full bg-white rounded-xl shadow-lg max-h-80 overflow-hidden z-50 border border-gray-200">
+                {/* Preview image */}
+                {hoveredHeroImage && (
+                  <div className="absolute -top-48 left-1/2 transform -translate-x-1/2 w-72 h-40 rounded-lg overflow-hidden shadow-xl z-50 border-2 border-white">
+                    <img
+                      src={hoveredHeroImage}
+                      alt="hotel preview"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = "none";
+                      }}
+                    />
+                  </div>
+                )}
+
+                {/* Loading State */}
+                {loading && query && (
+                  <div className="p-4 text-center text-gray-500">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500 mx-auto mb-2"></div>
+                    Searching hotels...
+                  </div>
+                )}
+
+                {/* Search Results */}
+                {!loading && suggestions.length > 0 && (
+                  <>
+                    <div className="p-3 border-b border-gray-100 bg-gray-50">
+                      <div className="text-sm font-semibold text-gray-700">
+                        Hotels ({suggestions.length})
+                      </div>
+                    </div>
+                    <div className="max-h-64 overflow-y-auto">
+                      {suggestions.map((hotel, index) => (
+                        <div
+                          key={hotel.id || index}
+                          className={`flex items-center gap-3 p-3 cursor-pointer transition-all duration-200 border-b border-gray-100 last:border-b-0 ${
+                            highlighted === index
+                              ? "bg-blue-50 border-l-4 border-l-blue-500"
+                              : "hover:bg-gray-50"
+                          }`}
+                          onMouseEnter={() => setHighlighted(index)}
+                          onClick={() => pickSuggestion(hotel)}
+                        >
+                          <div className="w-12 h-12 bg-gray-100 rounded-lg overflow-hidden flex-shrink-0">
+                            {hotel.previewImage ? (
+                              <img
+                                src={hotel.previewImage}
+                                alt={hotel.hotel_name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  e.target.style.display = "none";
+                                  e.target.nextSibling.style.display = "flex";
+                                }}
+                              />
+                            ) : null}
+                            <div className="w-full h-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center hidden">
+                              <FaHotel className="text-gray-400" />
+                            </div>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="text-sm font-semibold text-gray-900 mb-1">
+                              <HighlightText
+                                text={hotel.hotel_name}
+                                highlight={query}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-gray-600 mb-1">
+                              {hotel.city && (
+                                <span className="flex items-center gap-1">
+                                  <FaMapMarkerAlt className="w-3 h-3" />
+                                  <HighlightText
+                                    text={hotel.city}
+                                    highlight={query}
+                                  />
+                                </span>
+                              )}
+                              {hotel.facilities && (
+                                <span className="flex items-center gap-1">
+                                  <FaTag className="w-3 h-3" />
+                                  <span className="truncate">
+                                    {hotel.facilities
+                                      .split(",")
+                                      .slice(0, 2)
+                                      .join(", ")}
+                                  </span>
+                                </span>
+                              )}
+                            </div>
+                            {hotel.description && (
+                              <div className="text-sm text-gray-500 line-clamp-1">
+                                {hotel.description}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* No Results */}
+                {!loading && query && suggestions.length === 0 && (
+                  <div className="p-6 text-center">
+                    <FaSearch className="mx-auto text-gray-300 text-2xl mb-2" />
+                    <div className="text-gray-500 font-medium mb-1">
+                      No hotels found
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      Try different keywords
+                    </div>
+                  </div>
+                )}
+
+                {/* Recent Searches */}
+                {!loading && !query && searchHistory.length > 0 && (
+                  <>
+                    <div className="p-3 border-b border-gray-100 bg-gray-50 flex justify-between items-center">
+                      <div className="text-sm font-semibold text-gray-700">
+                        Recent Searches
+                      </div>
+                      <button
+                        onClick={clearSearchHistory}
+                        className="text-xs text-gray-500 hover:text-gray-700 transition-colors"
+                      >
+                        Clear all
+                      </button>
+                    </div>
+                    <div className="p-2">
+                      {searchHistory.map((search, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setQuery(search)}
+                          className="w-full text-left p-2 rounded hover:bg-gray-50 transition-colors flex items-center gap-2 text-sm text-gray-700"
+                        >
+                          <FaClock className="text-gray-400 w-3 h-3" />
+                          {search}
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {/* Empty State */}
+                {!loading && !query && searchHistory.length === 0 && (
+                  <div className="p-4 text-center text-gray-500">
+                    <div className="text-sm">Start typing to search hotels</div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
+        </div>
+
+        {/* Navigation Arrows */}
+        <div className="absolute bottom-8 right-8 gap-3 z-20 hidden md:flex">
+          <button
+            onClick={handlePrev}
+            className="w-10 h-10 rounded-full bg-white/90 hover:bg-white shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
+          >
+            <FaArrowLeft className="text-gray-800" />
+          </button>
+          <button
+            onClick={handleNext}
+            className="w-10 h-10 rounded-full bg-white/90 hover:bg-white shadow-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
+          >
+            <FaArrowRight className="text-gray-800" />
+          </button>
         </div>
       </div>
-    </section>
-  );
-}
 
-/* ---------- UI helpers ---------- */
-
-function LabeledField({ label, htmlFor, children }) {
-  return (
-    <label className="block" htmlFor={htmlFor}>
-      <span className="mb-2 block text-sm font-medium text-gray-700">
-        {label}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function Stat({ value, label }) {
-  return (
-    <div className="rounded-xl bg-white/10 ring-1 ring-white/20 px-3 py-3 backdrop-blur">
-      <div className="text-lg font-semibold">{value}</div>
-      <div className="text-xs text-white/85">{label}</div>
-    </div>
-  );
-}
-
-function Badge({ icon, text }) {
-  return (
-    <div className="inline-flex items-center gap-2">
-      <span className="inline-grid h-6 w-6 place-items-center rounded-full bg-white/15 ring-1 ring-white/20">
-        {icon}
-      </span>
-      <span>{text}</span>
-    </div>
-  );
-}
-
-/* ---------- Date Range Popover (portal + fixed) ---------- */
-
-function DateRangePopover({
-  open,
-  onClose,
-  startDate,
-  endDate,
-  minDate,
-  onChange,
-  themeColorVar = "var(--primary)",
-  anchorRect,
-}) {
-  const popoverRef = useRef(null);
-
-  // Close on outside click / ESC
-  useEffect(() => {
-    if (!open) return;
-    const onDown = (e) => {
-      if (popoverRef.current && !popoverRef.current.contains(e.target)) {
-        onClose?.();
-      }
-    };
-    const onEsc = (e) => e.key === "Escape" && onClose?.();
-    document.addEventListener("mousedown", onDown);
-    document.addEventListener("keydown", onEsc);
-    return () => {
-      document.removeEventListener("mousedown", onDown);
-      document.removeEventListener("keydown", onEsc);
-    };
-  }, [open, onClose]);
-
-  // Calendar view month
-  const [viewMonth, setViewMonth] = useState(() => {
-    const base = startDate ? parseDateUTC(startDate) : parseDateUTC(minDate);
-    return new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1));
-  });
-
-  // Work state for selection before apply
-  const [draftStart, setDraftStart] = useState(startDate || "");
-  const [draftEnd, setDraftEnd] = useState(endDate || "");
-
-  useEffect(() => {
-    if (open) {
-      setDraftStart(startDate || "");
-      setDraftEnd(endDate || "");
-      const base = startDate ? parseDateUTC(startDate) : parseDateUTC(minDate);
-      setViewMonth(
-        new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), 1))
-      );
-    }
-  }, [open, startDate, endDate, minDate]);
-
-  if (!open || !anchorRect) return null;
-
-  // Preferred popover size
-  const PADDING = 12;
-  const preferredWidth = 560;
-  const maxWidth = Math.min(window.innerWidth - PADDING * 2, preferredWidth);
-  // Position below the anchor; clamp horizontally into viewport
-  const top = Math.min(window.innerHeight - PADDING, anchorRect.bottom + 8);
-  const left = Math.min(
-    Math.max(PADDING, anchorRect.left),
-    Math.max(PADDING, window.innerWidth - maxWidth - PADDING)
-  );
-
-  const thisMonth = viewMonth;
-  const nextMonth = new Date(
-    Date.UTC(thisMonth.getUTCFullYear(), thisMonth.getUTCMonth() + 1, 1)
-  );
-  const minD = parseDateUTC(minDate);
-
-  const canGoPrev =
-    monthFirstDay(addMonths(thisMonth, -1)) >= monthFirstDay(minD);
-
-  const handleDayClick = (date) => {
-    const iso = formatDateUTC(date);
-    if (!draftStart || (draftStart && draftEnd)) {
-      setDraftStart(iso);
-      setDraftEnd("");
-    } else if (draftStart && !draftEnd) {
-      if (parseDateUTC(iso) < parseDateUTC(draftStart)) {
-        setDraftStart(iso);
-        setDraftEnd("");
-      } else {
-        setDraftEnd(iso);
-      }
-    }
-  };
-
-  const apply = () => {
-    onChange?.({ start: draftStart || "", end: draftEnd || "" });
-    onClose?.();
-  };
-
-  const clear = () => {
-    setDraftStart("");
-    setDraftEnd("");
-  };
-
-  return createPortal(
-    <div
-      ref={popoverRef}
-      className="fixed z-[60]"
-      style={{ top, left, width: maxWidth }}
-    >
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-xl p-3 sm:p-4">
-        <div className="flex items-center justify-between mb-3">
-          <div className="text-sm font-medium text-gray-800">
-            Select your dates
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() =>
-                canGoPrev && setViewMonth(addMonths(thisMonth, -1))
-              }
-              className={`h-8 w-8 inline-grid place-items-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 ${
-                !canGoPrev ? "opacity-40 cursor-not-allowed" : ""
-              }`}
-              aria-label="Previous month"
-            >
-              ‹
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMonth(addMonths(thisMonth, +1))}
-              className="h-8 w-8 inline-grid place-items-center rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
-              aria-label="Next month"
-            >
-              ›
-            </button>
-          </div>
-        </div>
-
-        {/* Two-month view */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <CalendarMonth
-            monthDate={thisMonth}
-            minDate={minD}
-            start={draftStart}
-            end={draftEnd}
-            onDayClick={handleDayClick}
-            themeColorVar={themeColorVar}
-          />
-          <CalendarMonth
-            monthDate={nextMonth}
-            minDate={minD}
-            start={draftStart}
-            end={draftEnd}
-            onDayClick={handleDayClick}
-            themeColorVar={themeColorVar}
-          />
-        </div>
-
-        {/* Footer actions */}
-        <div className="mt-4 flex items-center justify-between">
-          <div className="text-xs text-gray-500">
-            {draftStart && draftEnd
-              ? `Selected: ${draftStart} → ${draftEnd}`
-              : draftStart
-              ? `Check-in: ${draftStart}`
-              : "Pick a start date"}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={clear}
-              className="px-3 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 text-sm"
-            >
-              Clear
-            </button>
-            <button
-              type="button"
-              onClick={apply}
-              disabled={!draftStart || !draftEnd}
-              className="px-3 py-2 rounded-lg bg-[var(--primary)] hover:bg-[var(--primary-600)] active:bg-[var(--primary-700)] text-white text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Apply
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>,
-    document.body
-  );
-}
-
-function CalendarMonth({
-  monthDate,
-  minDate,
-  start,
-  end,
-  onDayClick,
-  themeColorVar,
-}) {
-  const year = monthDate.getUTCFullYear();
-  const month = monthDate.getUTCMonth();
-
-  const monthStart = new Date(Date.UTC(year, month, 1));
-  const monthEnd = new Date(Date.UTC(year, month + 1, 0));
-  const startWeekday = monthStart.getUTCDay(); // 0 Sun - 6 Sat
-
-  const days = [];
-  for (let i = 0; i < startWeekday; i++) days.push(null);
-  for (let d = 1; d <= monthEnd.getUTCDate(); d++) {
-    days.push(new Date(Date.UTC(year, month, d)));
-  }
-
-  const startD = start ? parseDateUTC(start) : null;
-  const endD = end ? parseDateUTC(end) : null;
-
-  const isBeforeMinDay = (d) => d < minDate;
-
-  const header = monthDate.toLocaleString("en-US", {
-    month: "long",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-
-  return (
-    <div className="rounded-xl border border-gray-200 p-3">
-      <div className="text-sm font-semibold text-gray-800 mb-2">{header}</div>
-      <div className="grid grid-cols-7 gap-1 text-xs text-gray-500 mb-1">
-        {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-          <div key={d} className="h-7 inline-grid place-items-center">
-            {d}
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-7 gap-1">
-        {days.map((d, idx) => {
-          if (!d) return <div key={idx} className="h-9" />;
-
-          const iso = formatDateUTC(d);
-          const selectedStart = startD && isSameDay(d, startD);
-          const selectedEnd = endD && isSameDay(d, endD);
-          const inRange = startD && endD && d > startD && d < endD;
-
-          const disabled = isBeforeMinDay(d);
-
-          return (
-            <button
-              key={iso}
-              type="button"
-              disabled={disabled}
-              onClick={() => onDayClick(d)}
-              className={[
-                "h-9 relative rounded-md text-sm transition",
-                "focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2",
-                disabled
-                  ? "text-gray-300 cursor-not-allowed"
-                  : "hover:bg-gray-100",
-                selectedStart || selectedEnd
-                  ? "text-white"
-                  : inRange
-                  ? "bg-[color:var(--range-bg,rgba(241,114,50,0.12))] text-gray-800"
-                  : "text-gray-800",
-              ].join(" ")}
-              style={
-                selectedStart || selectedEnd
-                  ? { background: `var(--primary)` }
-                  : {}
-              }
-            >
-              <span className="relative z-10 inline-block leading-9">
-                {d.getUTCDate()}
-              </span>
-              {inRange && (
-                <span
-                  className="absolute inset-0 rounded-md"
-                  style={{ background: "rgba(241,114,50,0.12)" }}
+      {/* Mobile Search - Same design as CruisesHero */}
+      <div className="md:hidden relative z-30">
+        <div className="relative px-4" style={{ marginTop: "-2rem" }}>
+          <div ref={containerRef} className="relative">
+            <form onSubmit={handleSearchSubmit}>
+              <div className="bg-white rounded-xl shadow-2xl flex items-center px-4 py-3 w-full border border-gray-200">
+                <FaMapMarkerAlt className="text-gray-500 mr-3 w-5 h-5 flex-shrink-0" />
+                <input
+                  type="text"
+                  placeholder="Search hotels..."
+                  className="w-full outline-none text-gray-700 font-medium placeholder-gray-500 text-base"
+                  value={query}
+                  onChange={handleInputChange}
+                  onFocus={handleInputFocus}
                 />
-              )}
-              {(selectedStart || selectedEnd) && (
-                <span className="absolute inset-0 rounded-md ring-1 ring-white/30" />
-              )}
-            </button>
-          );
-        })}
+              </div>
+            </form>
+
+            {/* Mobile Suggestions */}
+            {open && (suggestions.length > 0 || searchHistory.length > 0) && (
+              <div className="absolute mt-2 w-full bg-white rounded-xl shadow-2xl max-h-64 overflow-auto z-50 border border-gray-200">
+                {suggestions.length > 0
+                  ? suggestions.map((hotel, index) => (
+                      <div
+                        key={hotel.id || index}
+                        onClick={() => pickSuggestion(hotel)}
+                        className="flex items-center gap-2 p-3 border-b border-gray-100 last:border-b-0 hover:bg-gray-50"
+                      >
+                        <div className="w-10 h-10 bg-gray-100 rounded-md overflow-hidden flex-shrink-0">
+                          {hotel.previewImage ? (
+                            <img
+                              src={hotel.previewImage}
+                              alt={hotel.hotel_name}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                              <FaHotel className="text-gray-400 text-xs" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-semibold text-gray-800 truncate">
+                            {hotel.hotel_name}
+                          </div>
+                          <div className="text-xs text-gray-500 truncate">
+                            {hotel.city}
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-gray-400">
+                            {hotel.facilities && (
+                              <span className="truncate">
+                                {hotel.facilities
+                                  .split(",")
+                                  .slice(0, 2)
+                                  .join(", ")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  : searchHistory.map((search, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setQuery(search)}
+                        className="w-full text-left p-2 border-b border-gray-100 last:border-b-0 hover:bg-gray-50 flex items-center gap-2 text-sm text-gray-700"
+                      >
+                        <FaClock className="text-gray-400 w-3 h-3" />
+                        {search}
+                      </button>
+                    ))}
+              </div>
+            )}
+          </div>
+        </div>
       </div>
-    </div>
+    </>
   );
-}
-
-/* ---------- Anchoring helper ---------- */
-function useAnchorRect(el, active) {
-  const [rect, setRect] = useState(null);
-  useLayoutEffect(() => {
-    if (!active || !el) return;
-    const update = () => setRect(el.getBoundingClientRect());
-    update();
-    window.addEventListener("resize", update);
-    window.addEventListener("scroll", update, true);
-    return () => {
-      window.removeEventListener("resize", update);
-      window.removeEventListener("scroll", update, true);
-    };
-  }, [el, active]);
-  return rect;
-}
-
-/* ---------- Icons (inline SVG, no deps) ---------- */
-function BedIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M3 10V6a1 1 0 0 1 1-1h7a4 4 0 0 1 4 4v1h3a3 3 0 0 1 3 3v5h-2v-3H5v3H3v-12Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path
-        d="M6 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"
-        fill="currentColor"
-      />
-    </svg>
-  );
-}
-function ShieldIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M12 3l7 3v6c0 5-3.5 7.5-7 9-3.5-1.5-7-4-7-9V6l7-3Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path d="M9 12l2 2 4-4" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-function HeadsetIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M4 12a8 8 0 1 1 16 0v6a2 2 0 0 1-2 2h-2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <rect
-        x="2"
-        y="11"
-        width="4"
-        height="8"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <rect
-        x="18"
-        y="11"
-        width="4"
-        height="8"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-    </svg>
-  );
-}
-function SparkleIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M12 3l2 4 4 2-4 2-2 4-2-4-4-2 4-2 2-4Z" fill="currentColor" />
-      <path d="M18 14l1 2 2 1-2 1-1 2-1-2-2-1 2-1 1-2Z" fill="currentColor" />
-    </svg>
-  );
-}
-function PinIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path
-        d="M12 22s7-6.25 7-12a7 7 0 1 0-14 0c0 5.75 7 12 7 12Z"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-function CalendarIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <rect
-        x="3"
-        y="5"
-        width="18"
-        height="16"
-        rx="2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-      <path d="M8 3v4M16 3v4M3 10h18" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-function UsersIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M3 19a6 6 0 0 1 12 0" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="17" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M15 19a5 5 0 0 1 6 0" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-function SearchIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M20 20l-3.5-3.5" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-function CheckIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <path d="M5 13l4 4L19 7" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  );
-}
-function TargetIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" {...props}>
-      <circle cx="12" cy="12" r="8" stroke="currentColor" strokeWidth="1.5" />
-      <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M12 2v2M12 20v2M2 12h2M20 12h2"
-        stroke="currentColor"
-        strokeWidth="1.5"
-      />
-    </svg>
-  );
-}
-function StarIcon(props) {
-  return (
-    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" {...props}>
-      <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.2 1 5.9L12 17.7l-5.2 2.8 1-5.9-4.3-4.2 5.9-.9L12 3.5Z" />
-    </svg>
-  );
-}
-
-/* ---------- Date helpers ---------- */
-function parseDateUTC(yyyy_mm_dd) {
-  const [y, m, d] = yyyy_mm_dd.split("-").map(Number);
-  return new Date(Date.UTC(y, m - 1, d));
-}
-function formatDateUTC(date) {
-  const y = date.getUTCFullYear();
-  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
-  const d = String(date.getUTCDate()).padStart(2, "0");
-  return `${y}-${m}-${d}`;
-}
-function addMonths(date, count) {
-  return new Date(
-    Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + count, 1)
-  );
-}
-function addDays(date, days) {
-  return new Date(
-    Date.UTC(
-      date.getUTCFullYear(),
-      date.getUTCMonth(),
-      date.getUTCDate() + days
-    )
-  );
-}
-function isSameDay(a, b) {
-  return (
-    a.getUTCFullYear() === b.getUTCFullYear() &&
-    a.getUTCMonth() === b.getUTCMonth() &&
-    a.getUTCDate() === b.getUTCDate()
-  );
-}
-function monthFirstDay(d) {
-  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1));
-}
-// Simple shade/darken function for hex colors
-function shade(hex, percent = -10) {
-  const col = hex.replace("#", "");
-  const r = parseInt(col.substring(0, 2), 16);
-  const g = parseInt(col.substring(2, 4), 16);
-  const b = parseInt(col.substring(4, 6), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = clamp(r + amt, 0, 255);
-  const G = clamp(g + amt, 0, 255);
-  const B = clamp(b + amt, 0, 255);
-  return "#" + [R, G, B].map((v) => v.toString(16).padStart(2, "0")).join("");
-}
-function clamp(n, min, max) {
-  return Math.max(min, Math.min(max, n));
 }

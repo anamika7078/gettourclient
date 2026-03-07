@@ -1,12 +1,73 @@
+
+import { useState } from "react";
+
 /**
- * Contact section with improved form design and a larger rocket image.
+ * Contact section with improved form design and backend connection.
  * Orange theme, fully responsive, and your rocket image positioned exactly:
  * right: 9.5rem; top: 3rem; width: 255px
  *
- * Usage:
- *   <Contact rocketSrc="/images/your-rocket.png" />
+ * Backend Endpoint: POST ${API_URL}/api/contact
  */
 export default function Contact({ rocketSrc = "./roket.webp" }) {
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    subject: "",
+    phone: "",
+    message: "",
+  });
+
+  const [status, setStatus] = useState({
+    loading: false,
+    message: "",
+    error: false,
+  });
+
+  // Handle input changes
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus({ loading: true, message: "", error: false });
+
+    try {
+      const response = await fetch(`${API_URL}/api/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        setStatus({
+          loading: false,
+          message: "Message sent successfully!",
+          error: false,
+        });
+        setForm({ name: "", email: "", subject: "", phone: "", message: "" });
+      } else {
+        setStatus({
+          loading: false,
+          message: data.error || "Something went wrong!",
+          error: true,
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      setStatus({
+        loading: false,
+        message: "Server not responding. Try again later.",
+        error: true,
+      });
+    }
+  };
+
   return (
     <section className="relative bg-white">
       {/* Header */}
@@ -28,7 +89,7 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
           </p>
         </div>
 
-        {/* Mobile rocket (optional, centered). Remove if you don't want it on mobile */}
+        {/* Mobile rocket */}
         <div className="mt-6 flex justify-center sm:hidden" aria-hidden="true">
           <img
             src={rocketSrc}
@@ -39,7 +100,7 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
           />
         </div>
 
-        {/* Desktop/Tablet rocket with exact position and size requested */}
+        {/* Desktop rocket */}
         <div
           className="pointer-events-none absolute right-[9.5rem] top-[3rem] hidden sm:block"
           aria-hidden="true"
@@ -54,13 +115,10 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
         </div>
       </div>
 
-      {/* Form card */}
+      {/* Form */}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 pb-16">
         <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            // TODO: handle submit
-          }}
+          onSubmit={handleSubmit}
           className="mx-auto mt-10 max-w-4xl rounded-3xl bg-white/90 p-6 sm:p-8 shadow-[0_20px_60px_-20px_rgba(249,115,22,0.35)] ring-1 ring-orange-100 backdrop-blur"
         >
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
@@ -70,7 +128,10 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
               </label>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-100"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition focus:border-orange-500 focus:ring-4 focus:ring-orange-100"
                 placeholder="Your full name"
                 required
               />
@@ -82,7 +143,10 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
               </label>
               <input
                 type="email"
-                className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-100"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition focus:border-orange-500 focus:ring-4 focus:ring-orange-100"
                 placeholder="you@example.com"
                 required
               />
@@ -94,7 +158,10 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
               </label>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-100"
+                name="subject"
+                value={form.subject}
+                onChange={handleChange}
+                className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition focus:border-orange-500 focus:ring-4 focus:ring-orange-100"
                 placeholder="How can we help?"
               />
             </div>
@@ -105,8 +172,11 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
               </label>
               <input
                 type="tel"
-                className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-100"
-                placeholder="056-4847249"
+                name="phone"
+                value={form.phone}
+                onChange={handleChange}
+                className="mt-2 w-full rounded-xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition focus:border-orange-500 focus:ring-4 focus:ring-orange-100"
+                placeholder="056-345654322"
               />
             </div>
 
@@ -115,32 +185,55 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
                 Message
               </label>
               <textarea
+                name="message"
                 rows={5}
-                className="mt-2 w-full resize-y rounded-2xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition focus:border-orange-500 focus:outline-none focus:ring-4 focus:ring-orange-100"
+                value={form.message}
+                onChange={handleChange}
+                className="mt-2 w-full resize-y rounded-2xl border border-gray-200 bg-white px-4 py-3 text-gray-900 placeholder-gray-400 transition focus:border-orange-500 focus:ring-4 focus:ring-orange-100"
                 placeholder="Write your message here..."
+                required
               />
             </div>
           </div>
 
+          {/* Submit button */}
           <div className="mt-8 flex justify-center">
             <button
               type="submit"
-              className="group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-orange-300/40 transition hover:from-orange-600 hover:to-orange-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500"
+              disabled={status.loading}
+              className={`group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-3.5 font-semibold text-white shadow-lg shadow-orange-300/40 transition ${
+                status.loading
+                  ? "opacity-70 cursor-not-allowed"
+                  : "hover:from-orange-600 hover:to-orange-700"
+              }`}
             >
-              SUBMIT
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <path d="M5 12h14" />
-                <path d="M12 5l7 7-7 7" />
-              </svg>
+              {status.loading ? "SENDING..." : "SUBMIT"}
+              {!status.loading && (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-4 w-4 transition-transform group-hover:translate-x-0.5"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M5 12h14" />
+                  <path d="M12 5l7 7-7 7" />
+                </svg>
+              )}
             </button>
           </div>
+
+          {/* Success / Error Message */}
+          {status.message && (
+            <p
+              className={`mt-6 text-center font-medium ${
+                status.error ? "text-red-600" : "text-orange-600"
+              }`}
+            >
+              {status.message}
+            </p>
+          )}
         </form>
 
         {/* Contact info cards */}
@@ -160,7 +253,7 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
             </div>
             <p className="mt-4 text-center text-sm text-gray-500">Mobile</p>
             <p className="mt-1 text-center font-medium text-gray-900">
-              056-4847249
+              055-2883105
             </p>
           </div>
 
@@ -180,7 +273,7 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
             </div>
             <p className="mt-4 text-center text-sm text-gray-500">Email</p>
             <p className="mt-1 text-center font-medium text-gray-900 break-all">
-              info@joyfuladventure.ae
+              gettourguide26@gmail.com
             </p>
           </div>
 
@@ -202,13 +295,13 @@ export default function Contact({ rocketSrc = "./roket.webp" }) {
               ADDRESS
             </p>
             <p className="mt-1 text-center text-gray-700">
-              Al Marsa Street, Marina Mall, Dubai.
+              Reef Tower, 203, Cluster O, JLT, Dubai, UAE.
             </p>
           </div>
         </div>
       </div>
 
-      {/* Local animation for rocket image */}
+      {/* Floating rocket animation */}
       <style>{`
         @keyframes float {
           0% { transform: translateY(0px) rotate(-2deg); }

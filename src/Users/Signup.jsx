@@ -1,5 +1,7 @@
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { useToast } from "../hooks/useToast";
 
 /**
  * Sign up
@@ -21,6 +23,9 @@ export default function Signup({
   rotateIntervalMs = 5000,
   onSignup,
 }) {
+  const API_URL = import.meta.env.VITE_API_URL;
+
+  const { showToast } = useToast();
   // Default slides (aviation/travel vibe)
   const defaultSlides = useMemo(
     () => [
@@ -193,7 +198,7 @@ export default function Signup({
       lastName: lastName.trim(),
       email: email.trim().toLowerCase(),
       password,
-      phoneE164,
+      phone: phoneE164,
       countryCode: countryCode || null,
       acceptedTos: accept,
     };
@@ -203,8 +208,30 @@ export default function Signup({
       if (onSignup) {
         await onSignup(payload);
       } else {
-        console.log("Signup:", payload);
-        alert("Account created (demo). Wire this to your backend.");
+        // Call backend API (set VITE_API_URL for dev, or leave empty if frontend and backend share origin in production)
+        const res = await fetch(`${API_URL}/api/users/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = data?.message || "Failed to create account";
+          showToast({ type: "error", message: msg, duration: 3000 });
+          return;
+        }
+
+        // Success
+        showToast({
+          type: "success",
+          message: "Account created successfully. Please log in.",
+          duration: 1600,
+        });
+        // Redirect to login after brief pause
+        setTimeout(() => {
+          window.location.href = "/login";
+        }, 1600);
       }
     } finally {
       setSubmitting(false);
@@ -212,7 +239,7 @@ export default function Signup({
   };
 
   return (
-    <main className="min-h-screen bg-neutral-50" style={colorVars}>
+    <main className="min-h-screen  pb-10 bg-neutral-50" style={colorVars}>
       <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Left: Image carousel */}
@@ -476,14 +503,14 @@ export default function Signup({
                     >
                       I agree to all the{" "}
                       <Link
-                        to="#"
+                        to="/terms"
                         className="text-[var(--primary)] hover:text-[var(--primary-700)]"
                       >
-                        Terms of Service
+                        Terms & Conditions
                       </Link>{" "}
                       and{" "}
                       <Link
-                        to="#"
+                        to="/privacy"
                         className="text-[var(--primary)] hover:text-[var(--primary-700)]"
                       >
                         Privacy Policy
@@ -523,39 +550,6 @@ export default function Signup({
                     <div className="absolute inset-0 flex items-center">
                       <div className="w-full border-t border-neutral-200" />
                     </div>
-                    <div className="relative flex justify-center">
-                      <span className="bg-white px-3 text-xs text-neutral-400">
-                        Or signup with
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Social row */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--primary)]/35 hover:border-[var(--primary)]/60 py-3 text-neutral-800"
-                      onClick={() => alert("Facebook OAuth – wire up in app")}
-                    >
-                      <FacebookIcon className="h-5 w-5 text-[#1877F2]" />
-                      <span className="hidden sm:inline">Facebook</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--primary)]/35 hover:border-[var(--primary)]/60 py-3 text-neutral-800"
-                      onClick={() => alert("Google OAuth – wire up in app")}
-                    >
-                      <GoogleIcon className="h-5 w-5" />
-                      <span className="hidden sm:inline">Google</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-[var(--primary)]/35 hover:border-[var(--primary)]/60 py-3 text-neutral-800"
-                      onClick={() => alert("Apple Sign In – wire up in app")}
-                    >
-                      <AppleIcon className="h-5 w-5" />
-                      <span className="hidden sm:inline">Apple</span>
-                    </button>
                   </div>
                 </form>
               </div>

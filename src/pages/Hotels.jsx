@@ -1,16 +1,22 @@
-import React from 'react'
-import HotelHero from '../pages/Common/HotelHero';
-import AllRooms from './Hotels/AllRooms';
-import Footer from './Common/Footer';
+import { useCallback, useState } from "react";
+import HotelHero from "../pages/Common/HotelHero";
+import Footer from "./Common/Footer";
+import AllRooms from "./Hotels/AllRooms";
 
 const Hotels = () => {
-  return (
-      <>
-          <HotelHero />
-          <AllRooms />
-        <Footer />
-      </>
-  )
-}
+  const [query, setQuery] = useState("");
 
-export default Hotels
+  const handleSearch = useCallback(({ destination }) => {
+    setQuery(destination || "");
+  }, []);
+
+  return (
+    <>
+      <HotelHero onSearch={handleSearch} />
+      <AllRooms filterQuery={query} />
+      <Footer />
+    </>
+  );
+};
+
+export default Hotels;

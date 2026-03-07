@@ -1,394 +1,389 @@
+import {
+  Calendar,
+  Home,
+  Mail,
+  Phone,
+  Target,
+  Ticket,
+  Truck,
+  User,
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
-export default function EnquiryNow({
-  title = "Magical Dubai Winter Escape",
-  nights = 6,
-  days = 7,
-  brandColor = "#F17232",
-  onClose,
-  onSubmit,
-}) {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
-    countryCode: "+91",
-    phone: "",
-    date: "",
-    adults: 1,
-    children: 0,
-    flightBooked: "no",
-    remarks: "",
-  });
+const ORANGE = "#F17232";
 
-  const numberOptions = useMemo(
-    () =>
-      Array.from({ length: 51 }, (_, i) => (
-        <option key={i} value={i}>
-          {i}
-        </option>
-      )),
-    []
-  );
+export default function EnquiryNow({ pkg }) {
+  const title = pkg?.title || "Bali Paradise Package";
+  const destination = pkg?.destination || "Bali";
 
-  function handleChange(e) {
-    const { name, value } = e.target;
-    setForm((f) => ({ ...f, [name]: value }));
-  }
+  const { nights, days } = useMemo(() => {
+    const d = String(pkg?.duration || "5N/6D");
+    const n = d.match(/(\d+)\s*(?:N|Night|Nights)/i)?.[1];
+    const dy = d.match(/(\d+)\s*(?:D|Day|Days)/i)?.[1];
+    return {
+      nights: n ? Number(n) : 5,
+      days: dy ? Number(dy) : 6,
+    };
+  }, [pkg?.duration]);
 
-  function handleSubmit(e) {
+  // Form state
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [code, setCode] = useState("+971");
+  const [phone, setPhone] = useState("");
+  const [date, setDate] = useState("");
+  const [adult, setAdult] = useState(2);
+  const [child, setChild] = useState(0);
+  const [flightBooked, setFlightBooked] = useState("no");
+  const [remarks, setRemarks] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
+  const [ok, setOk] = useState(false);
+
+  const API_BASE = import.meta.env.VITE_API_URL;
+
+  async function handleSubmit(e) {
     e.preventDefault();
-    onSubmit?.(form);
+    setError("");
+    setOk(false);
+
+    if (!name.trim() || !email.trim()) {
+      setError("Please enter your name and email.");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      // Compose subject/message if needed for email mirroring (not used here)
+
+      // Send to holiday enquiries endpoint
+      const payload = {
+        name,
+        email,
+        phone: `${code} ${phone}`,
+        travel_date: date,
+        adults: adult,
+        children: child,
+        flight_booked: flightBooked,
+        remarks,
+        package_id: pkg?.id,
+        package_title: title,
+        destination,
+        duration: pkg?.duration,
+        price: pkg?.price,
+      };
+
+      const res = await fetch(`${API_BASE}/api/holiday-enquiries`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => null);
+        throw new Error(j?.message || "Failed to submit enquiry");
+      }
+
+      setOk(true);
+      setName("");
+      setEmail("");
+      setPhone("");
+      setDate("");
+      setAdult(2);
+      setChild(0);
+      setFlightBooked("no");
+      setRemarks("");
+    } catch (err) {
+      setError(err.message || "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
+  const tourChips = useMemo(() => {
+    const chips = [];
+    chips.push(destination ? `Arrival in ${destination}` : "Arrival");
+    const d = days || 3;
+    if (d >= 3) chips.push("City Tour");
+    if (d >= 4) chips.push("Activities");
+    chips.push("Departure");
+    return chips;
+  }, [destination, days]);
+
   return (
-    <div className="relative mx-auto w-full max-w-3xl rounded-2xl bg-white p-4 sm:p-6 md:p-7 shadow-2xl ring-1 ring-black/5">
-      {/* Close (moved inside, clearly visible) */}
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Close"
-        className="absolute right-3 top-3 z-20 grid h-10 w-10 place-items-center rounded-full text-white shadow-md"
-        style={{
-          backgroundColor: brandColor,
-          border: "2px solid rgba(255,255,255,0.9)",
-        }}
-      >
-        <svg
-          className="h-5 w-5"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
-
-      {/* Ribbon (shifted left so it doesn't clash with close) */}
-      <div className="absolute right-16 top-0 -translate-y-1/2">
-        <div
-          className="relative rounded-bl-md rounded-tr-md px-3 py-1.5 text-xs font-semibold text-white shadow"
-          style={{ backgroundColor: brandColor }}
-        >
-          {nights}N / {days}D
-          <span
-            className="absolute -right-2 top-0 h-0 w-0 border-b-[12px] border-l-[12px] border-b-transparent"
-            style={{ borderLeftColor: brandColor }}
-          />
-        </div>
-      </div>
-
-      {/* Title */}
-      <h2 className="mb-4 text-2xl font-semibold text-gray-900 sm:text-[28px]">
-        {title}
-      </h2>
-
-      {/* Top feature row */}
-      <div className="mb-5 flex w-full flex-wrap items-center gap-x-6 gap-y-3 text-sm text-gray-700">
-        <TopPill icon={BedIcon} label="Hotels" />
-        <TopPill icon={EyeIcon} label="Sightseeing" />
-        <TopPill icon={TicketIcon} label="Entry Tickets" />
-        <TopPill icon={MealIcon} label="Meals" />
-        <TopPill icon={ActivityIcon} label="Activities" />
-        <TopPill icon={TransferIcon} label="Transfers" />
-      </div>
-
-      <div className="h-px w-full bg-gray-200" />
-
-      {/* Tour/Hotel chips */}
-      <div className="mt-5 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div>
-          <h3 className="mb-3 text-base font-semibold text-gray-900">Tour</h3>
-          <div className="flex flex-wrap gap-2">
-            {[
-              "Arrival in Dubai & Dhow Cruise Marina",
-              "Dubai City Tour & Evening Desert Safari",
-              "Burj Khalifa & Fountain Show",
-              "Abu Dhabi City Tour",
-              "Miracle Garden and Global Village",
-              "Day at Leisure or Optional Tours",
-              "Departure from Dubai",
-            ].map((t) => (
-              <span
-                key={t}
-                className="inline-flex items-center rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-sm font-medium text-orange-800"
-              >
-                {t}
-              </span>
-            ))}
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-orange-50 py-6 px-4">
+      <div className="max-w-3xl mx-auto">
+        {/* Header Card */}
+        <div className="bg-white rounded-2xl shadow-md overflow-hidden mb-5">
+          <div className="bg-gradient-to-r from-orange-500 to-orange-600 px-6 py-4 flex justify-between items-center">
+            <div>
+              <h1 className="text-xl font-bold text-white mb-0.5">{title}</h1>
+              <p className="text-orange-100 text-xs font-medium">
+                Plan your perfect getaway
+              </p>
+            </div>
+            {(nights != null || days != null) && (
+              <div className="bg-white/20 px-4 py-2 rounded-xl border border-white/30">
+                <div className="text-white font-semibold text-sm">
+                  {nights}N / {days}D
+                </div>
+              </div>
+            )}
           </div>
-        </div>
-        <div>
-          <h3 className="mb-3 text-base font-semibold text-gray-900">Hotel</h3>
-          <div className="flex flex-wrap gap-2">
-            {[
-              "Citymax Bur Dubai/Admiral Plaza or similar",
-              "Citymax Bur Dubai/Admiral Plaza or similar",
-              "Grand Excelsior Hotel Bur Dubai or similar",
-            ].map((h) => (
-              <span
-                key={h}
-                className="inline-flex items-center rounded-full border border-orange-100 bg-orange-50 px-3 py-1 text-sm font-medium text-orange-800"
-              >
-                {h}
-              </span>
-            ))}
+
+          {/* Inclusions */}
+          <div className="px-6 py-4 bg-gradient-to-b from-orange-50 to-white">
+            <h3 className="text-xs font-bold text-gray-600 uppercase mb-2">
+              Package Inclusions
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {[
+                {
+                  icon: <Home className="w-4 h-4 text-orange-500" />,
+                  label: "Hotels",
+                },
+                {
+                  icon: <Ticket className="w-4 h-4 text-orange-500" />,
+                  label: "Tickets",
+                },
+                {
+                  icon: <Target className="w-4 h-4 text-orange-500" />,
+                  label: "Activities",
+                },
+                {
+                  icon: <Truck className="w-4 h-4 text-orange-500" />,
+                  label: "Transfers",
+                },
+              ].map((item, i) => (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border border-orange-100 hover:border-orange-300 transition-all"
+                >
+                  {item.icon}
+                  <span className="text-gray-700 text-xs font-medium">
+                    {item.label}
+                  </span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </div>
 
-      <div className="my-5 h-px w-full bg-gray-200" />
-
-      {/* Form */}
-      <form
-        onSubmit={handleSubmit}
-        className="grid grid-cols-12 gap-3 sm:gap-4"
-      >
-        {/* Name */}
-        <div className="col-span-12 md:col-span-6">
-          <input
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            placeholder="Name"
-            className="block w-full rounded-xl bg-gray-100 px-4 py-3 text-gray-900 placeholder-gray-500 outline-none focus:bg-white focus:ring-2 focus:ring-orange-300"
-          />
-        </div>
-
-        {/* Email */}
-        <div className="col-span-12 md:col-span-6">
-          <input
-            name="email"
-            type="email"
-            value={form.email}
-            onChange={handleChange}
-            placeholder="Email Address"
-            className="block w-full rounded-xl bg-gray-100 px-4 py-3 text-gray-900 placeholder-gray-500 outline-none focus:bg-white focus:ring-2 focus:ring-orange-300"
-          />
-        </div>
-
-        {/* Phone with country code */}
-        <div className="col-span-12 md:col-span-6">
-          <div className="flex gap-2">
-            <input
-              name="countryCode"
-              value={form.countryCode}
-              onChange={handleChange}
-              className="w-24 rounded-xl bg-gray-100 px-4 py-3 text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-orange-300"
-            />
-            <input
-              name="phone"
-              type="tel"
-              value={form.phone}
-              onChange={handleChange}
-              placeholder="Mobile Number*"
-              className="flex-1 rounded-xl bg-gray-100 px-4 py-3 text-gray-900 placeholder-gray-500 outline-none focus:bg-white focus:ring-2 focus:ring-orange-300"
-            />
+          {/* Tour & Hotel Info */}
+          <div className="px-6 py-4 grid md:grid-cols-2 gap-4 bg-white">
+            <div>
+              <h3 className="text-xs font-bold text-gray-600 uppercase mb-2">
+                Tour Itinerary
+              </h3>
+              <div className="flex flex-wrap gap-1.5">
+                {tourChips.map((c, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center bg-orange-50 text-orange-700 px-2.5 py-1 rounded-full text-xs font-semibold border border-orange-200"
+                  >
+                    {c}
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div>
+              <h3 className="text-xs font-bold text-gray-600 uppercase mb-2">
+                Accommodation
+              </h3>
+              <div className="bg-blue-50 text-blue-800 px-2.5 py-1 rounded-full text-xs font-semibold border border-blue-200 inline-block">
+                Hotel as per selection
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Date */}
-        <div className="col-span-12 md:col-span-6">
-          <input
-            name="date"
-            type="date"
-            value={form.date}
-            onChange={handleChange}
-            className="block w-full rounded-xl bg-gray-100 px-4 py-3 text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-orange-300"
-          />
-        </div>
+        {/* Enquiry Form */}
+        <div className="bg-white rounded-2xl shadow-md p-6">
+          <div className="mb-5">
+            <h2 className="text-lg font-bold text-gray-800 mb-1">
+              Send Your Enquiry
+            </h2>
+            <p className="text-gray-500 text-sm">
+              Fill in the details below and we'll get back to you shortly
+            </p>
+          </div>
 
-        {/* Adults */}
-        <div className="col-span-6 sm:col-span-3 md:col-span-2">
-          <label className="mb-1 block text-sm text-gray-700">Adult</label>
-          <select
-            name="adults"
-            value={form.adults}
-            onChange={handleChange}
-            className="block w-full rounded-xl bg-gray-100 px-4 py-3 text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-orange-300"
-          >
-            {numberOptions}
-          </select>
-        </div>
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && <div className="text-red-600 text-sm">{error}</div>}
+            {ok && (
+              <div className="text-green-600 text-sm">
+                Thanks! We'll contact you shortly.
+              </div>
+            )}
 
-        {/* Children */}
-        <div className="col-span-6 sm:col-span-3 md:col-span-2">
-          <label className="mb-1 block text-sm text-gray-700">Child</label>
-          <select
-            name="children"
-            value={form.children}
-            onChange={handleChange}
-            className="block w-full rounded-xl bg-gray-100 px-4 py-3 text-gray-900 outline-none focus:bg-white focus:ring-2 focus:ring-orange-300"
-          >
-            {numberOptions}
-          </select>
-        </div>
+            {/* Full Name & Email */}
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="text"
+                    placeholder="Enter your full name"
+                    className="w-full h-[42px] pl-10 pr-3 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="email"
+                    placeholder="Enter your email"
+                    className="w-full h-[42px] pl-10 pr-3 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
 
-        {/* Flight booked */}
-        <div className="col-span-12 md:col-span-4">
-          <label className="mb-1 block text-sm text-gray-700">
-            Flight Booked
-          </label>
-          <div className="flex items-center gap-6 rounded-xl bg-gray-50 px-4 py-3">
-            <label className="inline-flex items-center gap-2">
-              <input
-                type="radio"
-                name="flightBooked"
-                value="yes"
-                checked={form.flightBooked === "yes"}
-                onChange={handleChange}
-                style={{ accentColor: brandColor }}
+            {/* Phone */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <div className="flex gap-3">
+                <div className="relative flex-1 max-w-[120px]">
+                  <input
+                    type="text"
+                    placeholder="+971"
+                    className="w-full h-[42px] px-3 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                  />
+                </div>
+                <div className="relative flex-1">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <input
+                    type="tel"
+                    placeholder="Enter your mobile number"
+                    className="w-full h-[42px] pl-10 pr-3 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Travel Date */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select Travel Date
+              </label>
+              <div className="relative">
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-orange-500 w-4 h-4 pointer-events-none" />
+                <input
+                  type="date"
+                  className="w-full h-[42px] pl-10 pr-3 border border-gray-200 rounded-lg bg-gray-50 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none cursor-pointer"
+                  value={date}
+                  onChange={(e) => setDate(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Travelers & Flight */}
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Adults
+                </label>
+                <select
+                  className="w-full h-[42px] border border-gray-200 rounded-lg bg-gray-50 px-3 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                  value={adult}
+                  onChange={(e) => setAdult(Number(e.target.value))}
+                >
+                  {Array.from({ length: 10 }, (_, i) => (
+                    <option key={i} value={i + 1}>
+                      {i + 1} {i === 0 ? "Adult" : "Adults"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Children
+                </label>
+                <select
+                  className="w-full h-[42px] border border-gray-200 rounded-lg bg-gray-50 px-3 text-sm focus:ring-2 focus:ring-orange-400 focus:border-orange-400"
+                  value={child}
+                  onChange={(e) => setChild(Number(e.target.value))}
+                >
+                  {Array.from({ length: 11 }, (_, i) => (
+                    <option key={i} value={i}>
+                      {i} {i === 1 ? "Child" : "Children"}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Flight Booked
+                </label>
+                <div className="flex items-center gap-4 h-[42px]">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="flight"
+                      className="accent-orange-500 w-4 h-4"
+                      value="yes"
+                      checked={flightBooked === "yes"}
+                      onChange={() => setFlightBooked("yes")}
+                    />
+                    <span className="text-gray-700">Yes</span>
+                  </label>
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input
+                      type="radio"
+                      name="flight"
+                      className="accent-orange-500 w-4 h-4"
+                      value="no"
+                      checked={flightBooked === "no"}
+                      onChange={() => setFlightBooked("no")}
+                    />
+                    <span className="text-gray-700">No</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Remarks */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Additional Remarks
+              </label>
+              <textarea
+                rows={3}
+                placeholder="Any special requirements or questions..."
+                className="w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 focus:ring-2 focus:ring-orange-400 focus:border-orange-400 outline-none resize-none"
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
               />
-              <span>Yes</span>
-            </label>
-            <label className="inline-flex items-center gap-2">
-              <input
-                type="radio"
-                name="flightBooked"
-                value="no"
-                checked={form.flightBooked === "no"}
-                onChange={handleChange}
-                style={{ accentColor: brandColor }}
-              />
-              <span>No</span>
-            </label>
-          </div>
-        </div>
+            </div>
 
-        {/* Remarks */}
-        <div className="col-span-12">
-          <textarea
-            name="remarks"
-            rows={4}
-            value={form.remarks}
-            onChange={handleChange}
-            placeholder="Remarks"
-            className="block w-full rounded-xl bg-gray-100 px-4 py-3 text-gray-900 placeholder-gray-500 outline-none focus:bg-white focus:ring-2 focus:ring-orange-300"
-          />
+            {/* Submit */}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm py-3 rounded-lg transition-all disabled:opacity-70 shadow-md hover:shadow-lg"
+            >
+              {submitting ? "Submitting..." : "Submit Enquiry"}
+            </button>
+          </form>
         </div>
-
-        {/* Submit */}
-        <div className="col-span-12">
-          <button
-            type="submit"
-            className="w-full rounded-xl px-6 py-3.5 text-base font-semibold text-white"
-            style={{ backgroundColor: brandColor }}
-          >
-            Submit Enquiry
-          </button>
-        </div>
-      </form>
+      </div>
     </div>
-  );
-}
-
-/* ---------- Small UI atoms ---------- */
-
-function TopPill({ icon: Icon, label }) {
-  return (
-    <div className="inline-flex items-center gap-2 text-gray-700">
-      <Icon className="h-5 w-5 text-gray-700" />
-      <span className="text-[15px] font-medium">{label}</span>
-    </div>
-  );
-}
-
-/* ---------- Icons (inline SVG) ---------- */
-function BedIcon({ className = "h-5 w-5" }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M3 7v10M3 12h18" strokeLinecap="round" />
-      <rect x="6" y="9" width="5" height="3" rx="1" />
-      <rect x="12" y="9" width="8" height="5" rx="1" />
-    </svg>
-  );
-}
-function EyeIcon({ className = "h-5 w-5" }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z" />
-      <circle cx="12" cy="12" r="3" fill="currentColor" />
-    </svg>
-  );
-}
-function TicketIcon({ className = "h-5 w-5" }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M3 9a2 2 0 0 0 0 6h18a2 2 0 0 0 0-6H3Z" />
-      <path d="M8 9v6M16 9v6" />
-    </svg>
-  );
-}
-function MealIcon({ className = "h-5 w-5" }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M7 3v10" />
-      <path d="M4 3v10" />
-      <path d="M10 3v10" />
-      <path d="M14 3v7a3 3 0 0 0 6 0V3" />
-    </svg>
-  );
-}
-function ActivityIcon({ className = "h-5 w-5" }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path
-        d="M3 12h3l3 7 4-14 3 7h5"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
-}
-function TransferIcon({ className = "h-5 w-5" }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-    >
-      <path d="M4 17h16M4 7h16" />
-      <path
-        d="M7 7l-3 3 3 3M17 17l3-3-3-3"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
   );
 }

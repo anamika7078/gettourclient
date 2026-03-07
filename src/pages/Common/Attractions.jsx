@@ -1,55 +1,49 @@
-
-
 import "./Style/activities.css";
 
 const ACTIVITIES = [
   {
-    title: "Green Planet Tour",
-    price: 39,
-    currency: "USD",
-    image:
-      "https://images.unsplash.com/photo-1547721064-da6cfb341d50?q=80&w=1600&auto=format&fit=crop",
+    title: "Abu Dhabi",
+    image: "./Activity/a1.png",
   },
   {
-    title: "Al Ain City Tour",
-    price: 171,
-    currency: "USD",
-    image:
-      "https://images.unsplash.com/photo-1563813495657-2ecfcb74356d?q=80&w=1600&auto=format&fit=crop",
+    title: "Baku",
+    image: "./Activity/a2.png",
   },
   {
-    title: "East Coast Tour",
-    price: 173,
-    currency: "USD",
-    image:
-      "https://images.unsplash.com/photo-1500534314209-a26db0f5b12b?q=80&w=1600&auto=format&fit=crop",
+    title: "Bangkok",
+    image: "./Activity/a3.png",
   },
   {
-    title: "Desert Safari Evening Dubai",
-    price: 28,
-    currency: "USD",
-    image:
-      "https://images.unsplash.com/photo-1504194104404-433180773017?q=80&w=1600&auto=format&fit=crop",
+    title: "Dubai",
+    image: "./Activity/a4.png",
   },
   {
-    title: "Dhow Cruise Creek Tour",
-    price: 18,
-    currency: "USD",
-    image:
-      "https://images.unsplash.com/photo-1534543210156-32046f9d0bbf?q=80&w=1600&auto=format&fit=crop",
+    title: "Istanbul",
+    image: "./Activity/a5.png",
+  },
+  {
+    title: "Jaipur",
+    image: "./Activity/a6.jpg",
+  },
+  {
+    title: "Moscow",
+    image: "./Activity/a7.png",
+  },
+  {
+    title: "Ras al Khaimah",
+    image: "./Activity/a8.png",
+  },
+  {
+    title: "Singapore",
+    image: "./Activity/a9.png",
+  },
+  {
+    title: "Tbilisi",
+    image: "./Activity/a10.png",
   },
 ];
 
-function slugify(text) {
-  return text
-    .toLowerCase()
-    .trim()
-    .replace(/[^\w\s-]/g, "")
-    .replace(/\s+/g, "-");
-}
-
 export default function Activities() {
-  // Duplicate the list for seamless infinite scroll
   const LOOP = ACTIVITIES.concat(ACTIVITIES);
 
   return (
@@ -58,12 +52,10 @@ export default function Activities() {
         {/* Heading row */}
         <div className="mx-auto max-w-[1320px] flex items-center gap-3 pt-8 sm:pt-10">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-[#F37B2C]">
-            Activities
+            Your Next Adventure Awaits
           </h2>
 
-          {/* Rotating dotted circle with arrow — fully responsive and always visible */}
           <div className="ml-2 ring-wrap text-[#F37B2C]">
-            {/* Dotted ring (SVG) */}
             <svg
               className="ring-svg animate-spin-slower"
               viewBox="0 0 100 100"
@@ -81,7 +73,6 @@ export default function Activities() {
               />
             </svg>
 
-            {/* Arrow button */}
             <button
               type="button"
               aria-label="See all"
@@ -105,16 +96,12 @@ export default function Activities() {
           </div>
         </div>
 
-        {/* Full-width marquee track (no white shadows) */}
+        {/* Full-width marquee track */}
         <div className="relative mt-6">
           <div className="activities-marquee-mask">
             <div className="activities-marquee-track gap-4 md:gap-5 lg:gap-6">
               {LOOP.map((a, idx) => (
-                <ActivityCard
-                  key={`${a.title}-${idx}`}
-                  activity={a}
-                  href={`/activities/${slugify(a.title)}`}
-                />
+                <ActivityCard key={`${a.title}-${idx}`} activity={a} />
               ))}
             </div>
           </div>
@@ -124,20 +111,17 @@ export default function Activities() {
   );
 }
 
-function ActivityCard({ activity, href = "#" }) {
+function ActivityCard({ activity }) {
   const { title, image } = activity;
 
   return (
-    <a
-      href={href}
-      aria-label={title}
+    <div
       className="
         group relative overflow-hidden rounded-[22px]
         shrink-0
         w-[260px] sm:w-[280px] md:w-[300px] lg:w-[300px] xl:w-[300px]
         h-[420px] md:h-[440px] lg:h-[460px]
         bg-black
-        focus:outline-none focus-visible:ring-4 ring-[#F37B2C]/40
         transition-all
       "
     >
@@ -150,13 +134,13 @@ function ActivityCard({ activity, href = "#" }) {
         decoding="async"
       />
 
-      {/* Base gradient for legibility */}
+      {/* Base gradient */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
 
-      {/* Hover overlay to emphasize brand color */}
+      {/* Hover overlay */}
       <div className="absolute inset-0 bg-[#F37B2C]/0 group-hover:bg-[#F37B2C]/10 transition-colors duration-300 pointer-events-none" />
 
-      {/* Content */}
+      {/* Title */}
       <div className="absolute inset-x-4 sm:inset-x-5 bottom-4 sm:bottom-5">
         <h3
           className="
@@ -168,8 +152,8 @@ function ActivityCard({ activity, href = "#" }) {
         </h3>
       </div>
 
-      {/* Subtle brand halo on hover (no shadow) */}
+      {/* Hover ring */}
       <div className="pointer-events-none absolute inset-0 rounded-[22px] ring-0 group-hover:ring-4 ring-[#F37B2C]/25 transition-all duration-300" />
-    </a>
+    </div>
   );
 }

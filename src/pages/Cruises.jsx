@@ -1,16 +1,18 @@
-import React from 'react'
-import CruisesHero from './Common/CruisesHero'
-import AllCruises from './Cruises/AllCruises.jsx'
-import Footer from './Common/Footer'
+import CruisesHero from "./Common/CruisesHero";
+import Footer from "./Common/Footer";
+import TopActivity from "./Common/TopAcitivity";
+import AllCruises from "./Cruises/AllCruises.jsx";
 
 const Cruises = () => {
   return (
-      <>
-          <CruisesHero />
-          <AllCruises />
-        <Footer />
-      </>
-  )
-}
+    <>
+      <CruisesHero />
+      <TopActivity />
 
-export default Cruises
+      <AllCruises />
+      <Footer />
+    </>
+  );
+};
+
+export default Cruises;
