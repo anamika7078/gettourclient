@@ -762,6 +762,50 @@ export default function HolidayHero({
     );
   };
 
+  // Hardcoded holidays data as fallback
+  const hardcodedHolidays = [
+    {
+      id: 1,
+      title: "European Adventure - 7 Days",
+      destination: "Paris, Rome, Barcelona",
+      duration: "7 days / 6 nights",
+      price: 2500.00,
+      category: "Europe",
+      details: "Explore three of Europe's most beautiful cities. Includes flights, hotels, breakfast, and guided tours.",
+      images: JSON.stringify(["europe1.jpg", "europe2.jpg", "europe3.jpg"]),
+    },
+    {
+      id: 2,
+      title: "Tropical Paradise - Maldives",
+      destination: "Maldives",
+      duration: "5 days / 4 nights",
+      price: 1800.00,
+      category: "Beach",
+      details: "Relax in luxury water villas with crystal-clear waters. Includes all meals, water sports, and spa access.",
+      images: JSON.stringify(["maldives1.jpg", "maldives2.jpg"]),
+    },
+    {
+      id: 3,
+      title: "Asian Discovery Tour",
+      destination: "Tokyo, Singapore, Bangkok",
+      duration: "10 days / 9 nights",
+      price: 3200.00,
+      category: "Asia",
+      details: "Experience the best of Asia with cultural tours, amazing food, and modern cities.",
+      images: JSON.stringify(["asia1.jpg", "asia2.jpg", "asia3.jpg"]),
+    },
+    {
+      id: 4,
+      title: "Safari Adventure - Kenya",
+      destination: "Nairobi, Masai Mara",
+      duration: "6 days / 5 nights",
+      price: 2200.00,
+      category: "Adventure",
+      details: "Witness the Great Migration and Big Five. Includes game drives, accommodation, and all meals.",
+      images: JSON.stringify(["safari1.jpg", "safari2.jpg"]),
+    },
+  ];
+
   // Fetch holidays from your database
   useEffect(() => {
     let alive = true;
@@ -782,7 +826,12 @@ export default function HolidayHero({
           ? data
           : data.data || data.rows || [];
 
-        const normalizedHolidays = holidaysData.map((holiday) => {
+        // Use hardcoded data if API returns empty
+        const dataToUse = (Array.isArray(holidaysData) && holidaysData.length > 0) 
+          ? holidaysData 
+          : hardcodedHolidays;
+
+        const normalizedHolidays = dataToUse.map((holiday) => {
           let previewImage = "";
 
           // Parse images array from images field
@@ -846,7 +895,33 @@ export default function HolidayHero({
       })
       .catch((error) => {
         console.error("Failed to fetch holidays:", error);
-        setHolidays([]);
+        // Use hardcoded data on error
+        const normalizedHolidays = hardcodedHolidays.map((holiday) => {
+          let previewImage = "";
+          if (holiday.images) {
+            try {
+              const imagesArray = JSON.parse(holiday.images);
+              if (Array.isArray(imagesArray) && imagesArray.length > 0) {
+                previewImage = imagesArray[0];
+              }
+            } catch (err) {
+              console.error("Error parsing images:", err);
+            }
+          }
+          return {
+            id: holiday.id,
+            title: holiday.title,
+            destination: holiday.destination,
+            duration: holiday.duration,
+            price: holiday.price,
+            category: holiday.category,
+            details: holiday.details,
+            previewImage: previewImage || "./cards/1.jpg",
+            searchableText: `${holiday.title} ${holiday.destination} ${holiday.category} ${holiday.duration}`.toLowerCase(),
+            ...holiday,
+          };
+        });
+        setHolidays(normalizedHolidays);
       })
       .finally(() => {
         if (alive) setLoading(false);

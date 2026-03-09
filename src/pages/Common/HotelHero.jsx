@@ -927,6 +927,34 @@ export default function HotelHero() {
     };
   }, [API_BASE]);
 
+  // Hardcoded hotels data as fallback
+  const hardcodedHotels = [
+    {
+      id: 1,
+      hotel_name: "Grand Luxury Hotel",
+      address: "123 Main Street, Dubai, UAE",
+      description: "A luxurious 5-star hotel in the heart of Dubai with stunning views and world-class amenities.",
+      facilities: "Swimming Pool, Spa, Gym, Restaurant, Bar, Free WiFi, Parking, Airport Shuttle",
+      images: JSON.stringify(["hotel1.jpg", "hotel2.jpg", "hotel3.jpg"]),
+    },
+    {
+      id: 2,
+      hotel_name: "Seaside Resort",
+      address: "456 Beach Road, Maldives",
+      description: "Beautiful beachfront resort with private villas and direct beach access. Perfect for a relaxing getaway.",
+      facilities: "Private Beach, Water Sports, Spa, Restaurant, Bar, Free WiFi, Airport Transfer",
+      images: JSON.stringify(["resort1.jpg", "resort2.jpg"]),
+    },
+    {
+      id: 3,
+      hotel_name: "City Center Hotel",
+      address: "789 Downtown Avenue, New York, USA",
+      description: "Modern hotel in the heart of Manhattan, close to major attractions and business districts.",
+      facilities: "Fitness Center, Business Center, Restaurant, Bar, Free WiFi, Parking, Concierge",
+      images: JSON.stringify(["cityhotel1.jpg", "cityhotel2.jpg"]),
+    },
+  ];
+
   // Fetch hotels from your database
   useEffect(() => {
     let alive = true;
@@ -947,7 +975,12 @@ export default function HotelHero() {
           ? data
           : data.data || data.rows || [];
 
-        const normalizedHotels = hotelsData.map((hotel) => {
+        // Use hardcoded data if API returns empty
+        const dataToUse = (Array.isArray(hotelsData) && hotelsData.length > 0) 
+          ? hotelsData 
+          : hardcodedHotels;
+
+        const normalizedHotels = dataToUse.map((hotel) => {
           let previewImage = "";
 
           // Parse images array from images field
@@ -1025,7 +1058,41 @@ export default function HotelHero() {
       })
       .catch((error) => {
         console.error("Failed to fetch hotels:", error);
-        setHotels([]);
+        // Use hardcoded data on error
+        const normalizedHotels = hardcodedHotels.map((hotel) => {
+          let previewImage = "";
+          if (hotel.images) {
+            try {
+              const imagesArray = JSON.parse(hotel.images);
+              if (Array.isArray(imagesArray) && imagesArray.length > 0) {
+                previewImage = imagesArray[0];
+              }
+            } catch (err) {
+              console.error("Error parsing images:", err);
+            }
+          }
+          let city = "";
+          if (hotel.address) {
+            const addressParts = hotel.address.split(",").map((part) => part.trim());
+            if (addressParts.length > 1) {
+              city = addressParts[addressParts.length - 2] || addressParts[addressParts.length - 1];
+            } else {
+              city = hotel.address;
+            }
+          }
+          return {
+            id: hotel.id,
+            hotel_name: hotel.hotel_name,
+            address: hotel.address,
+            city: city,
+            description: hotel.description,
+            facilities: hotel.facilities,
+            previewImage: previewImage || "./cards/1.jpg",
+            searchableText: `${hotel.hotel_name} ${hotel.address} ${city} ${hotel.facilities}`.toLowerCase(),
+            ...hotel,
+          };
+        });
+        setHotels(normalizedHotels);
       })
       .finally(() => {
         if (alive) setLoading(false);

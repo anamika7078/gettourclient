@@ -68,6 +68,54 @@ export default function CityTourPackages() {
     }
   }, [id, cityName, API_BASE]);
 
+  // Hardcoded city packages data as fallback
+  const hardcodedCityPackages = [
+    {
+      id: 1,
+      title: "Dubai City Highlights Tour",
+      cityName: "Dubai",
+      cityImage: "dubai-highlights.jpg",
+      locationUrl: "https://maps.google.com/?q=Dubai",
+      duration: "4 hours",
+      price: 89.99,
+      images: JSON.stringify(["package1.jpg", "package2.jpg"]),
+      details: "Explore the iconic landmarks of Dubai including Burj Khalifa, Dubai Mall, and Palm Jumeirah.",
+    },
+    {
+      id: 2,
+      title: "Dubai Food & Culture Walk",
+      cityName: "Dubai",
+      cityImage: "dubai-food.jpg",
+      locationUrl: "https://maps.google.com/?q=Dubai+Food+District",
+      duration: "3 hours",
+      price: 65.00,
+      images: JSON.stringify(["food1.jpg", "food2.jpg"]),
+      details: "Taste authentic Emirati cuisine and learn about local food culture.",
+    },
+    {
+      id: 3,
+      title: "Paris Historical Walking Tour",
+      cityName: "Paris",
+      cityImage: "paris-historical.jpg",
+      locationUrl: "https://maps.google.com/?q=Paris",
+      duration: "5 hours",
+      price: 75.00,
+      images: JSON.stringify(["paris1.jpg", "paris2.jpg"]),
+      details: "Discover the rich history of Paris through its iconic monuments and charming streets.",
+    },
+    {
+      id: 4,
+      title: "Tokyo Shopping Experience",
+      cityName: "Tokyo",
+      cityImage: "tokyo-shopping.jpg",
+      locationUrl: "https://maps.google.com/?q=Tokyo+Shopping",
+      duration: "6 hours",
+      price: 95.00,
+      images: JSON.stringify(["tokyo1.jpg", "tokyo2.jpg"]),
+      details: "Explore Tokyo's best shopping districts from traditional markets to modern malls.",
+    },
+  ];
+
   // Fetch all city packages for search
   useEffect(() => {
     const fetchAllCityTours = async () => {
@@ -76,10 +124,13 @@ export default function CityTourPackages() {
         if (res.ok) {
           const response = await res.json();
           const data = response.data || response || [];
-          setAllCityTours(Array.isArray(data) ? data : []);
+          setAllCityTours(Array.isArray(data) && data.length > 0 ? data : hardcodedCityPackages);
+        } else {
+          setAllCityTours(hardcodedCityPackages);
         }
       } catch (err) {
         console.error("Error fetching city tours:", err);
+        setAllCityTours(hardcodedCityPackages);
       }
     };
     fetchAllCityTours();

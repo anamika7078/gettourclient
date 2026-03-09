@@ -193,6 +193,50 @@ export default function ActivityCards() {
   const titleCase = (text) =>
     (text || "").replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 
+  // Hardcoded activities data as fallback
+  const hardcodedActivities = [
+    {
+      id: 1,
+      title: "Bungee Jumping Adventure",
+      category: "Adventure Sports",
+      price: "AED 350",
+      image: "./cards/1.jpg",
+      reviews: 125,
+    },
+    {
+      id: 2,
+      title: "Scuba Diving Experience",
+      category: "Water Activities",
+      price: "USD 150",
+      image: "./cards/1.jpg",
+      reviews: 98,
+    },
+    {
+      id: 3,
+      title: "Historical City Tour",
+      category: "Cultural Tours",
+      price: "EUR 45",
+      image: "./cards/1.jpg",
+      reviews: 203,
+    },
+    {
+      id: 4,
+      title: "Safari Wildlife Experience",
+      category: "Nature & Wildlife",
+      price: "USD 200",
+      image: "./cards/1.jpg",
+      reviews: 156,
+    },
+    {
+      id: 5,
+      title: "Broadway Show Tickets",
+      category: "Entertainment",
+      price: "USD 120",
+      image: "./cards/1.jpg",
+      reviews: 89,
+    },
+  ];
+
   useEffect(() => {
     let mounted = true;
     setLoading(true);
@@ -202,9 +246,14 @@ export default function ActivityCards() {
         if (!mounted) return;
         const activities = res.data || [];
 
+        // Use hardcoded data if API returns empty
+        const dataToUse = (Array.isArray(activities) && activities.length > 0) 
+          ? activities 
+          : hardcodedActivities;
+
         // Group by category
         const map = new Map();
-        activities.forEach((a) => {
+        dataToUse.forEach((a) => {
           const cat = a.category || "Top Activities";
           const arr = map.get(cat) || [];
           arr.push({
@@ -228,6 +277,25 @@ export default function ActivityCards() {
       })
       .catch((err) => {
         console.error("Failed to load activities:", err);
+        // Use hardcoded data on error
+        const map = new Map();
+        hardcodedActivities.forEach((a) => {
+          const cat = a.category || "Top Activities";
+          const arr = map.get(cat) || [];
+          arr.push({
+            id: a.id,
+            title: a.title,
+            image: a.image,
+            price: a.price,
+            reviews: a.reviews || 0,
+          });
+          map.set(cat, arr);
+        });
+        const sectionsData = Array.from(map.entries()).map(([cat, items]) => ({
+          title: titleCase(cat),
+          activities: items,
+        }));
+        setSections(sectionsData);
       })
       .finally(() => mounted && setLoading(false));
 

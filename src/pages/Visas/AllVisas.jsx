@@ -7,15 +7,69 @@ export default function Visas() {
   const [loading, setLoading] = useState(true);
   const API_BASE = import.meta.env.VITE_API_URL;
 
+  // Hardcoded visas data as fallback
+  const hardcodedVisas = [
+    {
+      id: 1,
+      country: "United States",
+      price: 185.00,
+      subject: "Tourist Visa",
+      image: "usa-visa.jpg",
+      overview: "Apply for a US tourist visa to explore America's iconic landmarks.",
+    },
+    {
+      id: 2,
+      country: "United Kingdom",
+      price: 120.00,
+      subject: "Standard Visitor Visa",
+      image: "uk-visa.jpg",
+      overview: "Visit the UK for tourism, business, or to see family and friends.",
+    },
+    {
+      id: 3,
+      country: "Schengen Area",
+      price: 80.00,
+      subject: "Schengen Visa",
+      image: "schengen-visa.jpg",
+      overview: "Travel to 27 European countries with a single Schengen visa.",
+    },
+    {
+      id: 4,
+      country: "Australia",
+      price: 150.00,
+      subject: "Tourist Visa",
+      image: "australia-visa.jpg",
+      overview: "Explore Australia's stunning landscapes, beaches, and cities.",
+    },
+    {
+      id: 5,
+      country: "Japan",
+      price: 45.00,
+      subject: "Tourist Visa",
+      image: "japan-visa.jpg",
+      overview: "Discover Japan's unique culture, technology, and natural beauty.",
+    },
+    {
+      id: 6,
+      country: "Dubai/UAE",
+      price: 100.00,
+      subject: "Tourist Visa",
+      image: "dubai-visa.jpg",
+      overview: "Visit Dubai and the UAE for tourism or business.",
+    },
+  ];
+
   // ✅ Fetch backend visas
   useEffect(() => {
     const fetchVisas = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/visas`);
         const data = await res.json();
-        setVisas(Array.isArray(data) ? data : []);
+        const visasData = Array.isArray(data) ? data : (data?.data || []);
+        setVisas(visasData.length > 0 ? visasData : hardcodedVisas);
       } catch (err) {
         console.error("Error loading visas:", err);
+        setVisas(hardcodedVisas);
       } finally {
         setLoading(false);
       }

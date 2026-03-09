@@ -427,6 +427,50 @@ export default function ToursAllComp() {
   const titleCase = (text) =>
     (text || "").replace(/[-_]/g, " ").replace(/\b\w/g, (m) => m.toUpperCase());
 
+  // Hardcoded holidays data as fallback
+  const hardcodedHolidays = [
+    {
+      id: 1,
+      title: "European Adventure - 7 Days",
+      destination: "Paris, Rome, Barcelona",
+      duration: "7 days / 6 nights",
+      price: 2500.00,
+      category: "Europe",
+      images: JSON.stringify(["europe1.jpg", "europe2.jpg"]),
+      reviews: 312,
+    },
+    {
+      id: 2,
+      title: "Tropical Paradise - Maldives",
+      destination: "Maldives",
+      duration: "5 days / 4 nights",
+      price: 1800.00,
+      category: "Beach",
+      images: JSON.stringify(["maldives1.jpg", "maldives2.jpg"]),
+      reviews: 245,
+    },
+    {
+      id: 3,
+      title: "Asian Discovery Tour",
+      destination: "Tokyo, Singapore, Bangkok",
+      duration: "10 days / 9 nights",
+      price: 3200.00,
+      category: "Asia",
+      images: JSON.stringify(["asia1.jpg", "asia2.jpg"]),
+      reviews: 189,
+    },
+    {
+      id: 4,
+      title: "Safari Adventure - Kenya",
+      destination: "Nairobi, Masai Mara",
+      duration: "6 days / 5 nights",
+      price: 2200.00,
+      category: "Adventure",
+      images: JSON.stringify(["safari1.jpg", "safari2.jpg"]),
+      reviews: 156,
+    },
+  ];
+
   useEffect(() => {
     let mounted = true;
     setLoading(true);
@@ -434,11 +478,14 @@ export default function ToursAllComp() {
       .get(`${API_BASE}/api/holidays`)
       .then((res) => {
         if (!mounted) return;
-        const data = res.data?.data || [];
+        const data = res.data?.data || (Array.isArray(res.data) ? res.data : []);
+
+        // Use hardcoded data if API returns empty
+        const dataToUse = data.length > 0 ? data : hardcodedHolidays;
 
         // Group by category
         const map = new Map();
-        data.forEach((t) => {
+        dataToUse.forEach((t) => {
           const cat = t.category || "Top Tours";
           let img = "";
           try {
@@ -468,7 +515,28 @@ export default function ToursAllComp() {
         }));
         setSections(sectionData);
       })
-      .catch((err) => console.error("Failed to load tours:", err))
+      .catch((err) => {
+        console.error("Failed to load tours:", err);
+        // Use hardcoded data on error
+        const map = new Map();
+        hardcodedHolidays.forEach((t) => {
+          const cat = t.category || "Top Tours";
+          const arr = map.get(cat) || [];
+          arr.push({
+            id: t.id,
+            title: t.title,
+            image: "./cards/1.jpg",
+            price: t.price,
+            reviews: t.reviews || 0,
+          });
+          map.set(cat, arr);
+        });
+        const sectionData = Array.from(map.entries()).map(([cat, items]) => ({
+          title: titleCase(cat),
+          tours: items,
+        }));
+        setSections(sectionData);
+      })
       .finally(() => mounted && setLoading(false));
 
     return () => {

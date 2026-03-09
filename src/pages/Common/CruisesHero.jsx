@@ -599,6 +599,43 @@ export default function CruisesHero({
     localStorage.setItem("cruiseSearchHistory", JSON.stringify(updatedHistory));
   };
 
+  // Hardcoded cruises data as fallback
+  const hardcodedCruises = [
+    {
+      id: 1,
+      title: "Mediterranean Cruise - 7 Nights",
+      departure_port: "Barcelona, Spain",
+      departure_dates: JSON.stringify(["2024-06-15", "2024-07-20", "2024-08-10"]),
+      price: 1500.00,
+      image: "mediterranean-cruise.jpg",
+      banner_video_url: "https://youtube.com/watch?v=mediterranean",
+      category: "Mediterranean",
+      details: "Sail through the beautiful Mediterranean visiting Spain, France, Italy, and Greece.",
+    },
+    {
+      id: 2,
+      title: "Caribbean Paradise Cruise",
+      departure_port: "Miami, USA",
+      departure_dates: JSON.stringify(["2024-05-01", "2024-06-15", "2024-07-30"]),
+      price: 1800.00,
+      image: "caribbean-cruise.jpg",
+      banner_video_url: "https://youtube.com/watch?v=caribbean",
+      category: "Caribbean",
+      details: "Explore tropical islands, pristine beaches, and vibrant cultures.",
+    },
+    {
+      id: 3,
+      title: "Alaska Adventure Cruise",
+      departure_port: "Seattle, USA",
+      departure_dates: JSON.stringify(["2024-07-01", "2024-08-15"]),
+      price: 2200.00,
+      image: "alaska-cruise.jpg",
+      banner_video_url: "https://youtube.com/watch?v=alaska",
+      category: "Adventure",
+      details: "Witness glaciers, wildlife, and stunning natural beauty.",
+    },
+  ];
+
   // Fetch cruises from your database
   useEffect(() => {
     let alive = true;
@@ -619,7 +656,12 @@ export default function CruisesHero({
           ? data
           : data.data || data.rows || [];
 
-        const normalizedCruises = cruisesData.map((cruise) => {
+        // Use hardcoded data if API returns empty
+        const dataToUse = (Array.isArray(cruisesData) && cruisesData.length > 0) 
+          ? cruisesData 
+          : hardcodedCruises;
+
+        const normalizedCruises = dataToUse.map((cruise) => {
           let previewImage = cruise.image || "";
 
           // Construct proper image URL
@@ -669,7 +711,34 @@ export default function CruisesHero({
       })
       .catch((error) => {
         console.error("Failed to fetch cruises:", error);
-        setCruises([]);
+        // Use hardcoded data on error
+        const normalizedCruises = hardcodedCruises.map((cruise) => {
+          let previewImage = cruise.image || "";
+          let departureDates = [];
+          if (cruise.departure_dates) {
+            try {
+              departureDates = typeof cruise.departure_dates === "string"
+                ? JSON.parse(cruise.departure_dates)
+                : cruise.departure_dates;
+            } catch (err) {
+              console.error("Error parsing departure dates:", err);
+            }
+          }
+          return {
+            id: cruise.id,
+            title: cruise.title,
+            departure_port: cruise.departure_port,
+            departure_dates: departureDates,
+            price: cruise.price,
+            category: cruise.category,
+            details: cruise.details,
+            banner_video_url: cruise.banner_video_url,
+            previewImage: previewImage || "./cards/1.jpg",
+            searchableText: `${cruise.title} ${cruise.departure_port} ${cruise.category} ${cruise.details}`.toLowerCase(),
+            ...cruise,
+          };
+        });
+        setCruises(normalizedCruises);
       })
       .finally(() => {
         if (alive) setLoading(false);

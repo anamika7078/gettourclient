@@ -408,21 +408,50 @@ export default function CruiseCards() {
   const API_BASE = import.meta.env.VITE_API_URL;
   const [sections, setSections] = useState([]);
 
+  // Hardcoded cruises data as fallback
+  const hardcodedCruises = [
+    {
+      id: 1,
+      title: "Mediterranean Cruise - 7 Nights",
+      category: "Mediterranean",
+      price: 1500.00,
+      image: "mediterranean-cruise.jpg",
+      reviews: 245,
+    },
+    {
+      id: 2,
+      title: "Caribbean Paradise Cruise",
+      category: "Caribbean",
+      price: 1800.00,
+      image: "caribbean-cruise.jpg",
+      reviews: 189,
+    },
+    {
+      id: 3,
+      title: "Alaska Adventure Cruise",
+      category: "Adventure",
+      price: 2200.00,
+      image: "alaska-cruise.jpg",
+      reviews: 156,
+    },
+  ];
+
   useEffect(() => {
     let mounted = true;
     fetch(`${API_BASE}/api/cruises`)
       .then((res) => res.json())
       .then((json) => {
         if (!mounted) return;
-        const rows = Array.isArray(json?.data) ? json.data : [];
+        const rows = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
+        const dataToUse = rows.length > 0 ? rows : hardcodedCruises;
         const map = new Map();
-        rows.forEach((r) => {
+        dataToUse.forEach((r) => {
           const cat = r.category || "Top Cruises";
           const arr = map.get(cat) || [];
           arr.push({
             id: r.id,
             title: r.title || "Untitled Cruise",
-            image: r.image || null,
+            image: r.image || "./cards/1.jpg",
             price: r.price || 0,
             reviews: r.reviews || 0,
           });
@@ -434,7 +463,28 @@ export default function CruiseCards() {
         }));
         setSections(secs);
       })
-      .catch(console.error);
+      .catch((err) => {
+        console.error("Error fetching cruises:", err);
+        // Use hardcoded data on error
+        const map = new Map();
+        hardcodedCruises.forEach((r) => {
+          const cat = r.category || "Top Cruises";
+          const arr = map.get(cat) || [];
+          arr.push({
+            id: r.id,
+            title: r.title,
+            image: r.image || "./cards/1.jpg",
+            price: r.price,
+            reviews: r.reviews || 0,
+          });
+          map.set(cat, arr);
+        });
+        const secs = Array.from(map.entries()).map(([title, cruises]) => ({
+          title,
+          cruises,
+        }));
+        setSections(secs);
+      });
 
     return () => {
       mounted = false;

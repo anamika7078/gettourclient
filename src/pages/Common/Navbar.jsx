@@ -67,6 +67,38 @@ export default function CompleteNavbar() {
   const [cityPackages, setCityPackages] = useState([]);
   const [rawCities, setRawCities] = useState([]);
 
+  // Hardcoded data as fallback
+  const hardcodedCities = [
+    { id: 1, name: "Dubai", image: "dubai.jpg" },
+    { id: 2, name: "Paris", image: "paris.jpg" },
+    { id: 3, name: "Tokyo", image: "tokyo.jpg" },
+    { id: 4, name: "New York", image: "newyork.jpg" },
+    { id: 5, name: "London", image: "london.jpg" },
+    { id: 6, name: "Barcelona", image: "barcelona.jpg" },
+    { id: 7, name: "Singapore", image: "singapore.jpg" },
+    { id: 8, name: "Istanbul", image: "istanbul.jpg" },
+  ];
+  const hardcodedCityPackages = [
+    {
+      id: 1,
+      title: "Dubai City Highlights Tour",
+      cityName: "Dubai",
+      cityImage: "dubai-highlights.jpg",
+    },
+    {
+      id: 2,
+      title: "Paris Historical Walking Tour",
+      cityName: "Paris",
+      cityImage: "paris-historical.jpg",
+    },
+    {
+      id: 3,
+      title: "Tokyo Shopping Experience",
+      cityName: "Tokyo",
+      cityImage: "tokyo-shopping.jpg",
+    },
+  ];
+
   useEffect(() => {
     const fetchCityPackages = async () => {
       try {
@@ -74,14 +106,14 @@ export default function CompleteNavbar() {
         if (res.ok) {
           const response = await res.json();
           const data = response.data || response || [];
-          setCityPackages(Array.isArray(data) ? data : []);
+          setCityPackages(Array.isArray(data) && data.length > 0 ? data : hardcodedCityPackages);
         } else {
           console.error("Failed to fetch city packages:", res.status);
-          setCityPackages([]);
+          setCityPackages(hardcodedCityPackages);
         }
       } catch (err) {
         console.error("Error fetching city packages:", err);
-        setCityPackages([]);
+        setCityPackages(hardcodedCityPackages);
       }
     };
     const fetchCities = async () => {
@@ -90,14 +122,14 @@ export default function CompleteNavbar() {
         if (res.ok) {
           const response = await res.json();
           const data = response.data || response || [];
-          setRawCities(Array.isArray(data) ? data : []);
+          setRawCities(Array.isArray(data) && data.length > 0 ? data : hardcodedCities);
         } else {
           console.error("Failed to fetch cities:", res.status);
-          setRawCities([]);
+          setRawCities(hardcodedCities);
         }
       } catch (err) {
         console.error("Error fetching cities:", err);
-        setRawCities([]);
+        setRawCities(hardcodedCities);
       }
     };
     fetchCityPackages();

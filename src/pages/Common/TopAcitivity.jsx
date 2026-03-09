@@ -8,6 +8,18 @@ export default function TopActivity() {
   const [cities, setCities] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Hardcoded cities data as fallback
+  const hardcodedCities = [
+    { id: 1, name: "Dubai", image: "dubai.jpg" },
+    { id: 2, name: "Paris", image: "paris.jpg" },
+    { id: 3, name: "Tokyo", image: "tokyo.jpg" },
+    { id: 4, name: "New York", image: "newyork.jpg" },
+    { id: 5, name: "London", image: "london.jpg" },
+    { id: 6, name: "Barcelona", image: "barcelona.jpg" },
+    { id: 7, name: "Singapore", image: "singapore.jpg" },
+    { id: 8, name: "Istanbul", image: "istanbul.jpg" },
+  ];
+
   useEffect(() => {
     const fetchCities = async () => {
       try {
@@ -16,14 +28,14 @@ export default function TopActivity() {
           const response = await res.json();
           // API returns { success: true, data: [...] }
           const data = response.data || response || [];
-          setCities(Array.isArray(data) ? data : []);
+          setCities(Array.isArray(data) && data.length > 0 ? data : hardcodedCities);
         } else {
           console.error("Failed to fetch cities:", res.status);
-          setCities([]);
+          setCities(hardcodedCities);
         }
       } catch (err) {
         console.error("Error fetching cities:", err);
-        setCities([]);
+        setCities(hardcodedCities);
       } finally {
         setLoading(false);
       }

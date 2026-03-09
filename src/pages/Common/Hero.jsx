@@ -1076,6 +1076,55 @@ export default function Hero() {
     };
   }, [API_BASE]);
 
+  // Hardcoded activities data as fallback
+  const hardcodedActivities = [
+    {
+      id: 1,
+      title: "Bungee Jumping Adventure",
+      location_name: "Adventure Park, Dubai",
+      category: "Adventure Sports",
+      price: "AED 350",
+      details: "Experience the ultimate adrenaline rush with our professional bungee jumping experience.",
+      images: JSON.stringify(["activity1.jpg", "activity2.jpg"]),
+    },
+    {
+      id: 2,
+      title: "Scuba Diving Experience",
+      location_name: "Coral Reef, Maldives",
+      category: "Water Activities",
+      price: "USD 150",
+      details: "Dive into the crystal-clear waters and explore vibrant coral reefs.",
+      images: JSON.stringify(["diving1.jpg", "diving2.jpg"]),
+    },
+    {
+      id: 3,
+      title: "Historical City Tour",
+      location_name: "Old Town, Istanbul",
+      category: "Cultural Tours",
+      price: "EUR 45",
+      details: "Discover the rich history and culture of Istanbul with our guided tour.",
+      images: JSON.stringify(["tour1.jpg", "tour2.jpg"]),
+    },
+    {
+      id: 4,
+      title: "Safari Wildlife Experience",
+      location_name: "Serengeti National Park",
+      category: "Nature & Wildlife",
+      price: "USD 200",
+      details: "Embark on an unforgettable safari adventure to witness the Big Five.",
+      images: JSON.stringify(["safari1.jpg", "safari2.jpg"]),
+    },
+    {
+      id: 5,
+      title: "Broadway Show Tickets",
+      location_name: "Times Square, New York",
+      category: "Entertainment",
+      price: "USD 120",
+      details: "Enjoy world-class Broadway performances with premium seating.",
+      images: JSON.stringify(["show1.jpg"]),
+    },
+  ];
+
   // Fetch activities from your database
   useEffect(() => {
     let alive = true;
@@ -1096,7 +1145,12 @@ export default function Hero() {
           ? data
           : data.data || data.rows || [];
 
-        const normalizedActivities = activitiesData.map((activity) => {
+        // Use hardcoded data if API returns empty
+        const dataToUse = (Array.isArray(activitiesData) && activitiesData.length > 0) 
+          ? activitiesData 
+          : hardcodedActivities;
+
+        const normalizedActivities = dataToUse.map((activity) => {
           let previewImage = activity.image || "";
 
           // Parse images array from LONGTEXT field
@@ -1131,7 +1185,7 @@ export default function Hero() {
             category: activity.category || "Uncategorized",
             price: activity.price || "",
             details: activity.details || "",
-            previewImage: previewImage,
+            previewImage: previewImage || "./cards/1.jpg",
             ...activity,
           };
         });
@@ -1141,7 +1195,31 @@ export default function Hero() {
       })
       .catch((error) => {
         console.error("Failed to fetch activities:", error);
-        setActivities([]);
+        // Use hardcoded data on error
+        const normalizedActivities = hardcodedActivities.map((activity) => {
+          let previewImage = "";
+          if (activity.images) {
+            try {
+              const imagesArray = JSON.parse(activity.images);
+              if (Array.isArray(imagesArray) && imagesArray.length > 0) {
+                previewImage = imagesArray[0];
+              }
+            } catch (err) {
+              console.error("Error parsing images:", err);
+            }
+          }
+          return {
+            id: activity.id,
+            title: activity.title,
+            location_name: activity.location_name,
+            category: activity.category,
+            price: activity.price,
+            details: activity.details,
+            previewImage: previewImage || "./cards/1.jpg",
+            ...activity,
+          };
+        });
+        setActivities(normalizedActivities);
       })
       .finally(() => {
         if (alive) setLoading(false);

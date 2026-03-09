@@ -911,12 +911,58 @@ export default function AllRooms() {
   const [minPrice, setMinPrice] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
 
+  // Hardcoded hotels data as fallback
+  const hardcodedHotels = [
+    {
+      id: 1,
+      hotel_name: "Grand Luxury Hotel",
+      address: "123 Main Street, Dubai, UAE",
+      description: "A luxurious 5-star hotel in the heart of Dubai with stunning views and world-class amenities.",
+      facilities: "Swimming Pool, Spa, Gym, Restaurant, Bar, Free WiFi, Parking, Airport Shuttle",
+      rooms: [
+        { type: "Deluxe Room", price: 200, price_per_night: 200 },
+        { type: "Suite", price: 400, price_per_night: 400 },
+      ],
+      images: JSON.stringify(["hotel1.jpg", "hotel2.jpg"]),
+    },
+    {
+      id: 2,
+      hotel_name: "Seaside Resort",
+      address: "456 Beach Road, Maldives",
+      description: "Beautiful beachfront resort with private villas and direct beach access.",
+      facilities: "Private Beach, Water Sports, Spa, Restaurant, Bar, Free WiFi",
+      rooms: [
+        { type: "Beach Villa", price: 300, price_per_night: 300 },
+        { type: "Water Villa", price: 500, price_per_night: 500 },
+      ],
+      images: JSON.stringify(["resort1.jpg", "resort2.jpg"]),
+    },
+    {
+      id: 3,
+      hotel_name: "City Center Hotel",
+      address: "789 Downtown Avenue, New York, USA",
+      description: "Modern hotel in the heart of Manhattan, close to major attractions.",
+      facilities: "Fitness Center, Business Center, Restaurant, Bar, Free WiFi",
+      rooms: [
+        { type: "Standard Room", price: 150, price_per_night: 150 },
+        { type: "Executive Room", price: 250, price_per_night: 250 },
+      ],
+      images: JSON.stringify(["cityhotel1.jpg", "cityhotel2.jpg"]),
+    },
+  ];
+
   // ✅ Fetch all hotels with room data
   useEffect(() => {
     fetch(`${API_URL}/api/hotels`)
       .then((res) => res.json())
-      .then((data) => setHotels(data || []))
-      .catch((err) => console.error("Error fetching hotels:", err));
+      .then((data) => {
+        const hotelsData = Array.isArray(data) ? data : [];
+        setHotels(hotelsData.length > 0 ? hotelsData : hardcodedHotels);
+      })
+      .catch((err) => {
+        console.error("Error fetching hotels:", err);
+        setHotels(hardcodedHotels);
+      });
   }, [API_URL]);
 
   // ✅ Extract dynamic price from any available key or nested room
